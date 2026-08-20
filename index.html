@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Ecoglobal · Manifiesto Digital</title>
+<style>
+  :root{
+    --verde:#519548; --lima:#BCCF00; --carbon:#1F2A24; --hueso:#F6F7F2;
+    --borde:#E5E8DF; --borde2:#DADFD5; --gris:#6B7268; --gris2:#8A8F86;
+    --ok-bg:#EAF3E4; --ok-fg:#3D6E2E; --err-bg:#FBEAE6; --err-fg:#A1341D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--hueso); color:var(--carbon);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  input,select,textarea{ font-size:16px; font-family:inherit; } /* evita zoom auto iOS */
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; }
+  .container{ max-width:520px; margin:0 auto; }
+
+  /* Header */
+  .header{ position:sticky; top:0; z-index:40; background:var(--carbon); border-bottom:1px solid #12180F; }
+  .header-top{ display:flex; align-items:center; gap:8px; padding:12px 16px; }
+  .header-logo{ width:32px; height:32px; border-radius:8px; background:var(--lima); display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .header-title{ font-size:13px; font-weight:700; color:#fff; line-height:1.2; }
+  .header-sub{ font-size:10px; color:#9BA893; line-height:1.2; }
+  .tabs{ display:flex; gap:4px; padding:0 8px 8px; overflow-x:auto; }
+  .tab-btn{ flex-shrink:0; display:flex; align-items:center; gap:6px; border-radius:8px; padding:8px 12px; font-size:11px; font-weight:700; color:#9BA893; white-space:nowrap; }
+  .tab-btn.active{ background:var(--verde); color:#fff; }
+
+  /* Layout */
+  .view{ display:none; padding:16px; padding-bottom:110px; }
+  .view.active{ display:block; }
+  .card{ background:#fff; border:1px solid var(--borde); border-radius:12px; padding:16px; margin-bottom:20px; }
+  .section-head{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .section-num{ width:24px; height:24px; flex-shrink:0; border-radius:999px; background:var(--verde); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .section-title{ font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .info-box{ display:flex; align-items:center; gap:8px; background:#F1F3EC; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:11px; color:var(--gris); }
+
+  .field{ display:block; margin-bottom:12px; }
+  .field:last-child{ margin-bottom:0; }
+  .field-label{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.02em; color:var(--gris); margin-bottom:4px; }
+  .field-label .req{ color:#C0472B; }
+  .field input, .field select{
+    width:100%; border:1px solid var(--borde2); border-radius:6px; padding:10px 12px; color:var(--carbon); outline:none;
+  }
+  .field input:focus, .field select:focus{ border-color:var(--verde); box-shadow:0 0 0 2px rgba(81,149,72,.15); }
+  .field.matched input{ border-color:var(--verde); background:#F2F7EF; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .matched-note{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:var(--verde); margin:-4px 0 12px; }
+
+  /* Autocomplete */
+  .autocomplete-wrap{ position:relative; margin-bottom:12px; }
+  .autocomplete-wrap .field-label{ margin-bottom:4px; }
+  .autocomplete-input-wrap{ position:relative; }
+  .autocomplete-input-wrap input{ padding-right:34px; }
+  .check-icon{ position:absolute; right:10px; top:50%; transform:translateY(-50%); display:none; font-size:13px; }
+  .field.matched .check-icon{ display:block; }
+  .dropdown{
+    display:none; position:absolute; z-index:30; top:100%; left:0; right:0; margin-top:4px;
+    background:#fff; border:1px solid var(--borde); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.12); overflow:hidden;
+  }
+  .dropdown-item{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:10px 12px; }
+  .dropdown-item:hover{ background:var(--hueso); }
+  .dropdown-icon{ font-size:14px; }
+  .dropdown-title{ display:block; font-size:13px; font-weight:600; color:var(--carbon); }
+  .dropdown-sub{ display:block; font-size:11px; color:var(--gris2); }
+  .dropdown-empty{ padding:10px 12px; font-size:12px; color:var(--gris2); }
+
+  /* Materiales */
+  .material-item{ border:1px solid var(--borde); border-radius:8px; margin-bottom:8px; overflow:hidden; }
+  .material-item summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:10px 12px; }
+  .material-item summary::-webkit-details-marker{ display:none; }
+  .material-label{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; }
+  .dot{ width:8px; height:8px; border-radius:999px; flex-shrink:0; }
+  .material-right{ display:flex; align-items:center; gap:8px; }
+  .material-total{ font-size:12px; font-weight:600; color:var(--verde); }
+  .tag{ border-radius:999px; padding:2px 8px; font-size:9px; font-weight:700; text-transform:uppercase; color:#fff; }
+  .material-fields{ display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; border-top:1px solid var(--borde); }
+  .material-fields label{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; color:var(--gris); }
+  .material-fields input{ margin-top:4px; width:100%; border:1px solid var(--borde2); border-radius:6px; padding:8px 10px; }
+  .material-fields .span2{ grid-column:1 / -1; }
+  .total-row{ display:flex; align-items:center; justify-content:space-between; background:#F1F3EC; border-radius:8px; padding:10px 12px; margin-top:12px; }
+  .total-row .label{ font-size:12px; font-weight:700; text-transform:uppercase; }
+  .total-row .value{ font-size:16px; font-weight:700; color:var(--verde); }
+
+  /* Firma */
+  #firmaCanvas{ width:100%; height:140px; border:2px dashed var(--lima); border-radius:8px; background:#fff; touch-action:none; }
+  .btn-erase{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:500; color:var(--gris2); margin-top:8px; }
+
+  /* Barra inferior */
+  .bottom-bar{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--borde); padding:12px 16px; z-index:50; }
+  .bottom-bar-inner{ max-width:520px; margin:0 auto; }
+  .btn-primary{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--verde); color:#fff; border-radius:8px; padding:14px; font-size:15px; font-weight:700; }
+  .btn-primary:disabled{ opacity:.6; }
+  .btn-secondary{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--verde); color:#fff; border-radius:8px; padding:10px; font-size:14px; font-weight:700; }
+  .toast{ border-radius:6px; padding:8px 12px; font-size:12px; font-weight:500; margin-bottom:8px; }
+  .toast-ok{ background:var(--ok-bg); color:var(--ok-fg); }
+  .toast-err{ background:var(--err-bg); color:var(--err-fg); }
+
+  /* Piloto banner */
+  .banner{ background:var(--carbon); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .banner-top{ display:flex; align-items:center; justify-content:between; justify-content:space-between; }
+  .banner-label{ font-size:11px; font-weight:600; text-transform:uppercase; color:var(--lima); }
+  .banner-count{ font-size:11px; font-weight:700; color:#fff; }
+  .progress-track{ height:6px; width:100%; background:#3A4438; border-radius:999px; margin-top:8px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--lima); border-radius:999px; }
+  .banner-note{ margin-top:8px; font-size:11px; line-height:1.4; color:#9BA893; }
+
+  /* Listas */
+  .list-card{ display:flex; align-items:center; justify-content:space-between; width:100%; text-align:left; background:#fff; border:1px solid var(--borde); border-radius:12px; padding:12px; margin-bottom:8px; }
+  .list-card-main{ display:flex; align-items:center; gap:8px; }
+  .list-card-title{ font-size:13px; font-weight:600; }
+  .list-card-sub{ font-size:11px; color:var(--gris2); }
+  .btn-icon{ font-size:15px; flex-shrink:0; }
+  .empty-box{ border:1px dashed var(--borde2); border-radius:12px; padding:40px 16px; text-align:center; font-size:13px; color:var(--gris2); }
+
+  .list-card-clickable{ display:block; flex-direction:column; align-items:stretch; }
+  .list-card-row{ display:flex; align-items:center; justify-content:space-between; }
+  .badge-sync{ border-radius:999px; padding:2px 8px; font-size:9px; font-weight:700; background:var(--verde); color:#fff; }
+  .list-card-meta{ display:flex; flex-wrap:wrap; gap:10px; margin-top:4px; font-size:11px; color:var(--gris); }
+  .bold{ font-weight:700; color:var(--carbon); }
+  .green-bold{ font-weight:600; color:var(--verde); }
+
+  /* KPIs */
+  .kpis{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:16px; }
+  .kpi{ background:var(--carbon); border-radius:12px; padding:12px; }
+  .kpi-label{ font-size:10px; font-weight:600; text-transform:uppercase; color:var(--lima); }
+  .kpi-value{ font-size:18px; font-weight:700; color:#fff; }
+
+  .search-box{ display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--borde2); border-radius:8px; padding:8px 12px; margin-bottom:12px; }
+  .search-box input{ border:none; outline:none; width:100%; font-size:14px; }
+
+  .consecutivo-toggle{ font-size:11px; font-weight:600; color:var(--gris); text-decoration:underline; margin-bottom:12px; display:inline-block; }
+  .consecutivo-form{ display:none; align-items:flex-end; gap:8px; background:#fff; border:1px solid var(--borde); border-radius:8px; padding:12px; margin-bottom:12px; }
+  .consecutivo-form label{ font-size:10px; font-weight:600; text-transform:uppercase; color:var(--gris); display:block; }
+  .consecutivo-form input{ margin-top:4px; border:1px solid var(--borde2); border-radius:6px; padding:6px 8px; }
+  #cfgPrefijo{ width:60px; } #cfgSiguiente{ width:90px; }
+  .btn-mini{ background:var(--verde); color:#fff; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:700; }
+
+  /* Modal */
+  .modal-overlay{ position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; justify-content:center; }
+  .modal-sheet{ width:100%; max-width:520px; max-height:85vh; overflow-y:auto; background:#fff; border-radius:16px 16px 0 0; padding:20px; }
+  .modal-header{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
+  .modal-eyebrow{ display:block; font-size:10px; font-weight:700; text-transform:uppercase; color:var(--verde); margin-bottom:2px; }
+  .modal-header h3{ margin:0; font-size:15px; font-weight:700; }
+  .modal-body p{ font-size:13px; margin:4px 0; color:#3A3F37; }
+  .modal-section{ border-top:1px solid var(--borde); margin-top:12px; padding-top:12px; }
+  .modal-section h4{ font-size:11px; font-weight:700; text-transform:uppercase; color:var(--gris); margin:0 0 8px; }
+  .modal-material-row{ display:flex; align-items:center; justify-content:space-between; padding:4px 0; font-size:13px; }
+  .flex-center{ display:flex; align-items:center; gap:6px; }
+  .firma-img{ height:80px; border:1px solid var(--borde); border-radius:6px; }
+  .muted{ font-size:11px; color:var(--gris2); margin-top:4px; }
+
+  .loading-center{ text-align:center; padding:40px 0; font-size:20px; }
+  .spin{ display:inline-block; animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* Estado de nube */
+  .cloud-badge{ flex-shrink:0; font-size:10px; font-weight:700; border-radius:999px; padding:6px 10px; white-space:nowrap; }
+  .cloud-badge-off{ background:#3A2A2A; color:#E8A390; }
+  .cloud-badge-on{ background:#1F3A28; color:var(--lima); }
+  .cloud-modal-body{ font-size:13px; color:#3A3F37; }
+  .cloud-modal-body p{ margin:0 0 12px; line-height:1.5; }
+  .cloud-modal-body a{ color:var(--verde); }
+  .cloud-status-line{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="header-logo">🚚</div>
+    <div style="flex:1;">
+      <div class="header-title">ECOGLOBAL · Manifiesto Digital</div>
+      <div class="header-sub">Res. 1821 de 2017 — Trazabilidad en la nube</div>
+    </div>
+    <button type="button" id="btnCloudStatus" class="cloud-badge cloud-badge-off">☁️ Sin nube</button>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="campo">📋 Nuevo</button>
+    <button class="tab-btn" data-tab="panel">🚚 Trazabilidad</button>
+    <button class="tab-btn" data-tab="clientes">👥 Clientes <span id="clientesTabCount"></span></button>
+    <button class="tab-btn" data-tab="conductores">🚚 Conductores <span id="conductoresTabCount"></span></button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ===================== TAB: NUEVO MANIFIESTO ===================== -->
+  <div class="view active" id="view-campo">
+
+    <div class="card">
+      <div class="section-head"><span class="section-num">1</span><span class="section-title">Información general</span></div>
+      <div class="info-box">📋&nbsp; El <b>consecutivo</b> se asigna automáticamente al guardar — no se digita.</div>
+      <div class="grid2">
+        <label class="field"><span class="field-label">Fecha <span class="req">*</span></span><input type="date" id="fecha"></label>
+        <label class="field"><span class="field-label">Hora <span class="req">*</span></span><input type="time" id="hora"></label>
+      </div>
+      <label class="field"><span class="field-label">Documento de transporte</span><input type="text" id="documentoTransporte" placeholder="N° si aplica"></label>
+    </div>
+
+    <div class="card">
+      <div class="section-head"><span class="section-num">2</span><span class="section-title">Datos del generador</span></div>
+
+      <div class="autocomplete-wrap field" id="wrapRazonSocial">
+        <span class="field-label">Razón social <span class="req">*</span></span>
+        <div class="autocomplete-input-wrap">
+          <input type="text" id="razonSocial" placeholder="Empieza a escribir el nombre de la empresa...">
+          <span class="check-icon">✅</span>
+        </div>
+        <div class="dropdown" id="clienteDropdown"></div>
+      </div>
+      <div class="matched-note" id="clienteMatched" style="display:none;">✅ Datos autocompletados desde el directorio</div>
+
+      <div class="grid2">
+        <label class="field"><span class="field-label">NIT / Documento</span><input type="text" id="nit"></label>
+        <label class="field"><span class="field-label">ID Ecoglobal</span><input type="text" id="idEcoglobal"></label>
+      </div>
+      <label class="field"><span class="field-label">Teléfono</span><input type="text" id="telefono"></label>
+      <label class="field"><span class="field-label">Dirección</span><input type="text" id="direccion"></label>
+      <div class="grid2">
+        <label class="field"><span class="field-label">Barrio</span><input type="text" id="barrio"></label>
+        <label class="field"><span class="field-label">Ciudad</span><input type="text" id="ciudad"></label>
+      </div>
+      <label class="field"><span class="field-label">Solicitante</span><input type="text" id="solicitante"></label>
+      <div class="grid2">
+        <label class="field"><span class="field-label">Cédula solicitante</span><input type="text" id="cedulaSolicitante"></label>
+        <label class="field"><span class="field-label">Correo</span><input type="text" id="correo"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head"><span class="section-num">3</span><span class="section-title">Vehículo y conductor</span></div>
+
+      <div class="autocomplete-wrap field" id="wrapConductor">
+        <span class="field-label">Conductor</span>
+        <div class="autocomplete-input-wrap">
+          <input type="text" id="conductor" placeholder="Nombre o placa...">
+          <span class="check-icon">✅</span>
+        </div>
+        <div class="dropdown" id="conductorDropdown"></div>
+      </div>
+      <div class="matched-note" id="conductorMatched" style="display:none;">✅ Placa, tipo de vehículo y cédula autocompletados</div>
+
+      <div class="grid2">
+        <label class="field"><span class="field-label">Cédula conductor</span><input type="text" id="cedulaConductor"></label>
+        <label class="field"><span class="field-label">Placa <span class="req">*</span></span><input type="text" id="placa" style="text-transform:uppercase"></label>
+      </div>
+      <label class="field"><span class="field-label">Tipo vehículo</span><input type="text" id="tipoVehiculo"></label>
+      <div class="grid2">
+        <label class="field"><span class="field-label">Auxiliar</span><input type="text" id="auxiliar"></label>
+        <label class="field"><span class="field-label">Cédula auxiliar</span><input type="text" id="cedulaAuxiliar"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head"><span class="section-num">4</span><span class="section-title">Materiales recolectados</span></div>
+      <div id="materialesContainer"></div>
+      <div class="total-row"><span class="label">Total general</span><span class="value" id="totalGeneralDisplay">$0</span></div>
+    </div>
+
+    <div class="card">
+      <div class="section-head"><span class="section-num">5</span><span class="section-title">Entrega y firma</span></div>
+      <label class="field">
+        <span class="field-label">Método de pago</span>
+        <select id="metodoPago">
+          <option>Factura x cobrar</option>
+          <option>Contado</option>
+          <option>Transferencia</option>
+        </select>
+      </label>
+      <label class="field"><span class="field-label">Nombre quien entrega</span><input type="text" id="entregaNombre"></label>
+      <div class="grid2">
+        <label class="field"><span class="field-label">C.C.</span><input type="text" id="entregaCC"></label>
+        <label class="field"><span class="field-label">Cargo</span><input type="text" id="entregaCargo"></label>
+      </div>
+      <div class="field">
+        <span class="field-label">Firma digital</span>
+        <canvas id="firmaCanvas"></canvas>
+        <button type="button" class="btn-erase" id="btnBorrarFirma">🧹 Borrar firma</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TAB: TRAZABILIDAD ===================== -->
+  <div class="view" id="view-panel">
+    <a href="javascript:void(0)" class="consecutivo-toggle" id="btnToggleConsecutivo">Próximo consecutivo: <span id="consecutivoLabel">...</span> · ajustar</a>
+    <div class="consecutivo-form" id="consecutivoForm">
+      <label>Prefijo<input type="text" id="cfgPrefijo"></label>
+      <label>Próximo número<input type="number" id="cfgSiguiente"></label>
+      <button class="btn-mini" id="btnGuardarConsecutivo">Guardar</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-label">Manifiestos</div><div class="kpi-value" id="kpiManifiestos">0</div></div>
+      <div class="kpi"><div class="kpi-label">Kg totales</div><div class="kpi-value" id="kpiKg">0</div></div>
+      <div class="kpi"><div class="kpi-label">Facturado</div><div class="kpi-value" id="kpiPesos" style="font-size:15px;">$0</div></div>
+    </div>
+
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" id="searchTrazabilidad" placeholder="Buscar por consecutivo, empresa, placa o conductor...">
+      <button id="btnReloadTrazabilidad">🔄</button>
+    </div>
+
+    <div id="listaTrazabilidad"></div>
+  </div>
+
+  <!-- ===================== TAB: CLIENTES ===================== -->
+  <div class="view" id="view-clientes">
+    <div class="banner">
+      <div class="banner-top"><span class="banner-label">Directorio de empresas</span><span class="banner-count"><span id="clientesCount">0</span> / 200 empresas</span></div>
+      <div class="progress-track"><div class="progress-fill" id="clientesProgressBar" style="width:0%"></div></div>
+      <div class="banner-note">160 empresas cargadas desde la BASE MAESTRA (filtradas: solo negocios formales, sin microgeneradores). Se sigue completando hasta las ~200 del mercado objetivo a medida que se registran manifiestos nuevos.</div>
+      <button type="button" class="btn-mini" id="btnResembrarClientes" style="margin-top:10px;">🔄 Recargar empresas de la BASE MAESTRA</button>
+      <div id="resembrarClientesToast"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px;">Agregar empresa al directorio</div>
+      <label class="field"><span class="field-label">Razón social <span class="req">*</span></span><input type="text" id="c_razonSocial"></label>
+      <div class="grid2">
+        <label class="field"><span class="field-label">NIT</span><input type="text" id="c_nit"></label>
+        <label class="field"><span class="field-label">ID Ecoglobal</span><input type="text" id="c_idEcoglobal"></label>
+      </div>
+      <label class="field"><span class="field-label">Teléfono</span><input type="text" id="c_telefono"></label>
+      <label class="field"><span class="field-label">Dirección</span><input type="text" id="c_direccion"></label>
+      <div class="grid2">
+        <label class="field"><span class="field-label">Barrio</span><input type="text" id="c_barrio"></label>
+        <label class="field"><span class="field-label">Ciudad</span><input type="text" id="c_ciudad"></label>
+      </div>
+      <label class="field"><span class="field-label">Correo</span><input type="text" id="c_correo"></label>
+      <div id="clienteToastBox"></div>
+      <button class="btn-secondary" style="margin-top:12px;" id="btnAddCliente">➕ Agregar al directorio</button>
+    </div>
+
+    <div id="listaClientes"></div>
+  </div>
+
+  <!-- ===================== TAB: CONDUCTORES ===================== -->
+  <div class="view" id="view-conductores">
+    <div class="banner">
+      <div class="banner-top"><span class="banner-label">Directorio de conductores y vehículos</span><span class="banner-count"><span id="conductoresCount">0</span> cargados</span></div>
+      <div class="banner-note">Se autocompleta placa, tipo de vehículo, cédula y auxiliar al escribir el nombre en el manifiesto.</div>
+      <button type="button" class="btn-mini" id="btnResembrarConductores" style="margin-top:10px;">🔄 Cargar los 4 conductores piloto</button>
+      <div id="resembrarConductoresToast"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px;">Agregar conductor</div>
+      <label class="field"><span class="field-label">Nombre <span class="req">*</span></span><input type="text" id="v_nombre"></label>
+      <div class="grid2">
+        <label class="field"><span class="field-label">Cédula</span><input type="text" id="v_cedula"></label>
+        <label class="field"><span class="field-label">Placa <span class="req">*</span></span><input type="text" id="v_placa"></label>
+      </div>
+      <label class="field"><span class="field-label">Tipo vehículo</span><input type="text" id="v_tipoVehiculo"></label>
+      <div class="grid2">
+        <label class="field"><span class="field-label">Auxiliar</span><input type="text" id="v_auxiliar"></label>
+        <label class="field"><span class="field-label">Cédula auxiliar</span><input type="text" id="v_cedulaAuxiliar"></label>
+      </div>
+      <div id="conductorToastBox"></div>
+      <button class="btn-secondary" style="margin-top:12px;" id="btnAddConductor">➕ Agregar conductor</button>
+    </div>
+
+    <div id="listaConductores"></div>
+  </div>
+
+</div>
+
+<!-- Barra inferior fija (solo visible en tab Nuevo) -->
+<div class="bottom-bar" id="bottomBar">
+  <div class="bottom-bar-inner">
+    <div id="formToastBox"></div>
+    <button class="btn-primary" id="btnGuardar">🚚 Guardar y sincronizar</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     ECOGLOBAL — Manifiesto Digital (JavaScript puro, sin
+     dependencias externas, sin JSX, sin módulos import).
+     Funciona con doble clic en Windows, en Edge o Chrome.
+  ========================================================= */
+
+  var MATERIALES = [
+    { key:"biosanitarios", label:"Biosanitarios", tag:"RESPEL", color:"#C0472B" },
+    { key:"cortopunzantes", label:"Cortopunzantes", tag:"RESPEL", color:"#C0472B" },
+    { key:"anatomopatologicos", label:"Anatomopatológicos", tag:"RESPEL", color:"#C0472B" },
+    { key:"quimicos", label:"Químicos", tag:"RESPEL", color:"#8A4FBE" },
+    { key:"medicamentos", label:"Medicamentos vencidos", tag:"RESPEL", color:"#8A4FBE" },
+    { key:"organicos", label:"Orgánicos (barreduras)", tag:"ORGÁNICO", color:"#519548" },
+    { key:"madera", label:"Madera", tag:"APROV.", color:"#8B6A3F" },
+    { key:"aprovechables", label:"Aprovechables", tag:"APROV.", color:"#BCCF00" },
+    { key:"epps", label:"EPPS", tag:"OTRO", color:"#4F7DBE" },
+    { key:"otros", label:"Otros (tarros, transporte...)", tag:"OTRO", color:"#8A8F86" }
+  ];
+
+  var CLIENTES_KEY = "clientes:directorio";
+  var CONDUCTORES_KEY = "conductores:directorio";
+  var CONSECUTIVO_KEY = "config:consecutivo";
+  var PILOTO_META = 200;
+
+  /* Directorio de empresas de Ecoglobal: 5 clientes piloto iniciales +
+     155 empresas formales activas filtradas de la BASE MAESTRA (se excluyen
+     microgeneradores/personas naturales, según el enfoque de negocio actual). */
+  var SEED_CLIENTES = [
+    { razonSocial:"Consultorio Odontológico Odontoimagen", nit:"5,826,923", idEcoglobal:"17", telefono:"3124332073", direccion:"Calle 11 # 11-16", barrio:"", ciudad:"Funza", correo:"jotaporras81@hotmail.com" },
+    { razonSocial:"Droguería Vivafarma", nit:"19.430.640", idEcoglobal:"36", telefono:"3124814027", direccion:"Calle 5 # 5-12", barrio:"Santa Sofía", ciudad:"Madrid", correo:"hugobautista09@hotmail.com" },
+    { razonSocial:"Spa Yenny", nit:"20.352.667", idEcoglobal:"39", telefono:"3136862259", direccion:"Carrera 2 # 3-62, frente a la alcaldía", barrio:"", ciudad:"Subachoque", correo:"Yennypenagos304@gmail.com" },
+    { razonSocial:"Consultorio Odontológico Juan Camilo Arias Cuellar", nit:"1.090.489.751", idEcoglobal:"840", telefono:"3144333696", direccion:"Calle 7 # 11-75", barrio:"", ciudad:"Madrid", correo:"odjuncamiloarias@gmail.com" },
+    { razonSocial:"Droguería y Minimercado Don José", nit:"1.007.422.456", idEcoglobal:"554", telefono:"3219353911", direccion:"Calle 21 # 1-63 Este", barrio:"", ciudad:"Madrid", correo:"" },
+    { razonSocial:"COGA 24 HORAS SAS", nit:"3.165.883", idEcoglobal:"8", telefono:"3502101053", direccion:"TV. 73a No.82d-31", barrio:"", ciudad:"ENGATIVA", correo:"Odontologia.coga@gmail.com" },
+    { razonSocial:"ARISTOGROOMER", nit:"4.866.750", idEcoglobal:"13", telefono:"3504651731", direccion:"calle 1f-26-57. Barrio santa isabel", barrio:"", ciudad:"ZONA CENTRO", correo:"egecheverria@gmail.com" },
+    { razonSocial:"NATA STYLOS", nit:"5.316.727", idEcoglobal:"16", telefono:"3108181498", direccion:"CRA 11 \\# 10-22 CC PUNTO 11 5TO PISO LOCAL 5005", barrio:"", ciudad:"ZONA CENTRO", correo:"perillanata85@gmail.com" },
+    { razonSocial:"CONSULTORIO ODONTOLOGICO ODONTOIMAGEN", nit:"5,826,923", idEcoglobal:"17", telefono:"3124332073 WTH", direccion:"CALLE 11 \\# 11-16 FUNZA", barrio:"", ciudad:"FUNZA", correo:"jotaporras81@hotmail.com" },
+    { razonSocial:"Praga Ritual BL", nit:"7.720.131", idEcoglobal:"20", telefono:"3233258015 - 3203070389 - 3124382253 3233258015 - 3203070389 - 3124382253", direccion:"Carrera 90C Nro 6A 47 Casa 180 Rincon de Castilla 4", barrio:"", ciudad:"KENNEDY", correo:"sutavasquezjuanpablo@gmail.com" },
+    { razonSocial:"SPA MASCOTAS", nit:"10.097.868", idEcoglobal:"22", telefono:"3241052871", direccion:"CRR 69 \\# 8 - 65", barrio:"", ciudad:"KENNEDY", correo:"Spa.mascotas01@gmail.com" },
+    { razonSocial:"DROGUERIA MAZUERA", nit:"11.202.809", idEcoglobal:"25", telefono:"3008727832", direccion:"CLL 175 \\# 63-41", barrio:"", ciudad:"SUBA", correo:"salomecamelo15@hotmail.com" },
+    { razonSocial:"BARBERIA KATHY", nit:"11.382.843", idEcoglobal:"26", telefono:"3208601994", direccion:"KR94F No-132-31", barrio:"", ciudad:"SUBA", correo:"katymariana16d@gmail.com" },
+    { razonSocial:"OPTICA DR GONZALEZ", nit:"11.428.446", idEcoglobal:"27", telefono:"3108223919", direccion:"CLL 50 \\# 13-21", barrio:"", ciudad:"CHAPINERO", correo:"protesismanizales@gmail.com" },
+    { razonSocial:"UNIDAD ODONTOLOGICA ORTOPREVENIR", nit:"17.326.638", idEcoglobal:"31", telefono:"3132525011", direccion:"AV PRIMERA DE MAYO \\# 7- 16", barrio:"", ciudad:"ZONA SUR 1", correo:"Dr.miguelpenuela@hotmail.com" },
+    { razonSocial:"ASMEDICA", nit:"19.381.591", idEcoglobal:"35", telefono:"3112226701", direccion:"CRA 16 \\#49-24 OFC 202", barrio:"", ciudad:"TEUSAQUILLO", correo:"mauricite@yahoo.es" },
+    { razonSocial:"DROGUERIA VIVAFARMA", nit:"19.430.640", idEcoglobal:"36", telefono:"3124814027 CADA DOS MESES", direccion:"Calle 5 \\#5-12 barrio santa Sofía", barrio:"", ciudad:"BARRIO SANTA SOFIA MADRID", correo:"hugobautista09@hotmail.com" },
+    { razonSocial:"QUIROPIES COLOMBIA", nit:"20.485.230", idEcoglobal:"42", telefono:"3144086463", direccion:"CRA 19 \\# 39B - 65", barrio:"", ciudad:"TEUSAQUILLO", correo:"centropodologico.1119@gmail.com" },
+    { razonSocial:"PELUQUERIA MECHAS", nit:"20.957.229", idEcoglobal:"47", telefono:"3112888047", direccion:"CLL.3 No.3-60", barrio:"", ciudad:"SUBACHOQUE CTRO.", correo:"meryluz\\_14@hotmail.com" },
+    { razonSocial:"PELUQUERIA REBELIS", nit:"21.058.258", idEcoglobal:"48", telefono:"3108785087", direccion:"KR 9 \\#6-62", barrio:"", ciudad:"ZIPAQUIRA", correo:"Arevaloesperanza1987@gmail.com" },
+    { razonSocial:"CLINICA VETERINARIA DRA DUQUE", nit:"21.082.277", idEcoglobal:"49", telefono:"3206432608", direccion:"CLL 22I \\# 114A 55", barrio:"", ciudad:"FONTIBON", correo:"Beltranfidelina@gmail.com" },
+    { razonSocial:"DERWIN SOLORZANO", nit:"DERWIN SOLORZANO", idEcoglobal:"1.238.518", telefono:"SUBA", direccion:"321 2371552", barrio:"", ciudad:"3", correo:"dsolorzanomanagua@gmail.com" },
+    { razonSocial:"JUAN ANDRES MORENO PORRAS", nit:"JUAN ANDRES MORENO PORRAS", idEcoglobal:"3.073.244", telefono:"LA MESA", direccion:"3105595884", barrio:"", ciudad:"6", correo:"Morenoporrasjuanandres@gmail.com" },
+    { razonSocial:"MIGUEL ARCANGEL SALAMANCA NIÑO", nit:"MIGUEL ARCANGEL SALAMANCA NIÑO", idEcoglobal:"3.159.372", telefono:"ENGATIVA", direccion:"3118395064", barrio:"", ciudad:"7", correo:"salamanca3159372@gmail.com" },
+    { razonSocial:"JESUS MARIA PALACIOS GAITAN", nit:"COGA 24 HORAS SAS", idEcoglobal:"3.165.883", telefono:"ENGATIVA", direccion:"3502101053", barrio:"", ciudad:"8", correo:"Odontologia.coga@gmail.com" },
+    { razonSocial:"EGLIS ECHEVERRIA AVENDAÑO", nit:"ARISTOGROOMER", idEcoglobal:"4.866.750", telefono:"ZONA CENTRO", direccion:"3504651731", barrio:"", ciudad:"13", correo:"egecheverria@gmail.com" },
+    { razonSocial:"NATALY PERILLA", nit:"NATA STYLOS", idEcoglobal:"5.316.727", telefono:"ZONA CENTRO", direccion:"3108181498", barrio:"", ciudad:"16", correo:"perillanata85@gmail.com" },
+    { razonSocial:"JOSE VICENTE CAÑON PORRAS", nit:"CONSULTORIO ODONTOLOGICO ODONTOIMAGEN", idEcoglobal:"5826923", telefono:"FUNZA", direccion:"3124332073 WTH", barrio:"", ciudad:"17", correo:"jotaporras81@hotmail.com" },
+    { razonSocial:"JUAN PABLO SUTA VASQUEZ", nit:"Praga Ritual BL", idEcoglobal:"7.720.131", telefono:"KENNEDY", direccion:"3233258015 - 3203070389 - 3124382253 3233258015 - 3203070389 - 3124382253", barrio:"", ciudad:"20", correo:"sutavasquezjuanpablo@gmail.com" },
+    { razonSocial:"CARLOS ARMANDO DURAN", nit:"CARLOS ARMANDO DURAN", idEcoglobal:"9.534.004", telefono:"ZONA CENTRO", direccion:"3138115868", barrio:"", ciudad:"21", correo:"armandod25@hotmail.com" },
+    { razonSocial:"JHON SILVA OSORIO", nit:"SPA MASCOTAS", idEcoglobal:"10.097.868", telefono:"KENNEDY", direccion:"3241052871", barrio:"", ciudad:"22", correo:"Spa.mascotas01@gmail.com" },
+    { razonSocial:"JORGE CAMELO AGUILAR", nit:"DROGUERIA MAZUERA", idEcoglobal:"11.202.809", telefono:"SUBA", direccion:"3008727832", barrio:"", ciudad:"25", correo:"salomecamelo15@hotmail.com" },
+    { razonSocial:"RAFAEL GOMEZ", nit:"BARBERIA KATHY", idEcoglobal:"11.382.843", telefono:"SUBA", direccion:"3208601994", barrio:"", ciudad:"26", correo:"katymariana16d@gmail.com" },
+    { razonSocial:"HECTOR HERNAN GONZALEZ LOPEZ", nit:"OPTICA DR GONZALEZ", idEcoglobal:"11.428.446", telefono:"CHAPINERO", direccion:"3108223919", barrio:"", ciudad:"27", correo:"protesismanizales@gmail.com" },
+    { razonSocial:"MIGUEL PEÑUELA DELGADO", nit:"UNIDAD ODONTOLOGICA ORTOPREVENIR", idEcoglobal:"17.326.638", telefono:"ZONA SUR 1", direccion:"3132525011", barrio:"", ciudad:"31", correo:"Dr.miguelpenuela@hotmail.com" },
+    { razonSocial:"JAMER YECID LAGO FARFAN", nit:"JAMER YECID LAGO FARFAN", idEcoglobal:"18.955.578", telefono:"KENNEDY", direccion:"3102760740", barrio:"", ciudad:"32", correo:"catalinaodonto2326@gmail.com" },
+    { razonSocial:"MAURICIO TELLEZ FORERO", nit:"ASMEDICA", idEcoglobal:"19.381.591", telefono:"TEUSAQUILLO", direccion:"3112226701", barrio:"", ciudad:"35", correo:"mauricite@yahoo.es" },
+    { razonSocial:"HUGO BAUTISTA", nit:"DROGUERIA VIVAFARMA", idEcoglobal:"19.430.640", telefono:"BARRIO SANTA SOFIA MADRID", direccion:"3124814027 CADA DOS MESES", barrio:"", ciudad:"36", correo:"hugobautista09@hotmail.com" },
+    { razonSocial:"MYRIAM RODRIGUEZ DE ABELLO", nit:"MYRIAM RODRIGUEZ DE ABELLO", idEcoglobal:"20.064.189", telefono:"USAQUEN", direccion:"3044309066", barrio:"", ciudad:"37", correo:"u.abello@gmail.com" },
+    { razonSocial:"YENNY PENAGOS", nit:"SPA YENNY", idEcoglobal:"20.352.667", telefono:"Queda adelante de la alcaldía Subachoque", direccion:"3136862259", barrio:"", ciudad:"39", correo:"Yennypenagos304@gmail.com" },
+    { razonSocial:"ANA ROSALBA BELTRAN RODRIGUEZ", nit:"ANA ROSALBA BELTRAN RODRIGUEZ", idEcoglobal:"20.470.515", telefono:"CHIA", direccion:"3133540763", barrio:"", ciudad:"41", correo:"redodontologicabelbon@gmail.com" },
+    { razonSocial:"RAQUEL CARLINA HERNANDEZ", nit:"QUIROPIES COLOMBIA", idEcoglobal:"20.485.230", telefono:"TEUSAQUILLO", direccion:"3144086463", barrio:"", ciudad:"42", correo:"centropodologico.1119@gmail.com" },
+    { razonSocial:"LINETH ZORANY CHACON JIMENEZ", nit:"LINETH ZORANY CHACON JIMENEZ", idEcoglobal:"20.739.380", telefono:"LA VIRGEN MADRID", direccion:"3132630466", barrio:"", ciudad:"46", correo:"linethchaconjimenez@gmail.com" },
+    { razonSocial:"LUZ MERY RODRIGUEZ ARANGO", nit:"PELUQUERIA MECHAS", idEcoglobal:"20.957.229", telefono:"SUBACHOQUE CTRO.", direccion:"3112888047", barrio:"", ciudad:"47", correo:"meryluz\\_14@hotmail.com" },
+    { razonSocial:"LUZ ESPERANZA AREVALO ROJAS", nit:"PELUQUERIA REBELIS", idEcoglobal:"21.058.258", telefono:"ZIPAQUIRA", direccion:"3108785087", barrio:"", ciudad:"48", correo:"Arevaloesperanza1987@gmail.com" },
+    { razonSocial:"FIDELINA BELTRAN GARZON", nit:"CLINICA VETERINARIA DRA DUQUE", idEcoglobal:"21.082.277", telefono:"FONTIBON", direccion:"3206432608", barrio:"", ciudad:"49", correo:"Beltranfidelina@gmail.com" },
+    { razonSocial:"SARAMI VARGAS PEREZ", nit:"SARAMI VARGAS PEREZ", idEcoglobal:"22.807.860", telefono:"SUBA", direccion:"3132474353", barrio:"", ciudad:"50", correo:"prolashcolombia@gmail.com" },
+    { razonSocial:"MARIA ADIELA MACIAS MORALES", nit:"SALA DE BELLEZA LAURA VANESA", idEcoglobal:"24.157.125", telefono:"SUBA", direccion:"3102400583", barrio:"", ciudad:"51", correo:"adielamacias@hotmail.com" },
+    { razonSocial:"YASMIN HERRERA JIMENEZ", nit:"BELLEZA PLENA", idEcoglobal:"24717688", telefono:"BOSA - SOACHA", direccion:"3142023921", barrio:"", ciudad:"52", correo:"quitian\\_492@hotmail.com" },
+    { razonSocial:"DAMARIS RIAÑO ORJUELA", nit:"DAMARIS RIAÑO ORJUELA", idEcoglobal:"28.683.610", telefono:"SUBA", direccion:"3002367093", barrio:"", ciudad:"54", correo:"Dasalud\\_dr@hotmail.com" },
+    { razonSocial:"SONIA AMPARO CASTAÑO MARULANDA", nit:"CASTAÑO DE INDIAS", idEcoglobal:"28.742.099", telefono:"MADRID", direccion:"3204559298", barrio:"", ciudad:"55", correo:"indiascastano@gmail.com" },
+    { razonSocial:"YENNI ALECXIS MORA CORTES", nit:"YENNI ALECXIS MORA CORTES", idEcoglobal:"35354753", telefono:"FUNZA", direccion:"3183166480", barrio:"", ciudad:"60", correo:"yenni.mora@gmail.com" },
+    { razonSocial:"NIDIA MIREY GIL RODRIGUEZ", nit:"EL CLUB DE LA BELLEZA", idEcoglobal:"35.377.988", telefono:"ZONA SUR 1", direccion:"3228196212 SEPTIEMBRE", barrio:"", ciudad:"62", correo:"Ainayerim78@gmail.com" },
+    { razonSocial:"CLAUDIA MILENA GIL", nit:"KINGS \\&QUEENS", idEcoglobal:"35.394.093", telefono:"RUBI 2 MOSQUERA", direccion:"3102616686", barrio:"", ciudad:"63", correo:"Claudiamilenagilsanchez@gmail.com" },
+    { razonSocial:"LADY YOJANA NIETO CHACON", nit:"DRA. YOJANA NIETO", idEcoglobal:"35.428.986", telefono:"Barrio: Algarra 2, Zipaquira Cundinamarca", direccion:"3160574848", barrio:"", ciudad:"68", correo:"odontologiayn@gmail.com" },
+    { razonSocial:"GLORIA VILLAMARIN GONZALEZ", nit:"DROGUERIA VINCIMAR", idEcoglobal:"35.511.591", telefono:"SUBA", direccion:"3158994406", barrio:"", ciudad:"69", correo:"gloriavincimar@gmail.com" },
+    { razonSocial:"GLORIA ZORAIDA TABARES CAÑON", nit:"LABORATORIO DENTAL GLODENTS", idEcoglobal:"38.143.797", telefono:"ENGATIVA", direccion:"3133469367", barrio:"", ciudad:"73", correo:"gloriatabares381@gmail.com" },
+    { razonSocial:"DAYRA MONSALVO LOZANO", nit:"DAYRA MONSALVO LOZANO", idEcoglobal:"39.045.919", telefono:"FONTIBON", direccion:"3192642113", barrio:"", ciudad:"75", correo:"dayramil16@gmail.com" },
+    { razonSocial:"LEIDY KATHERINE PUENTES", nit:"SALA DE BELLEZA JOHAN", idEcoglobal:"39.535.353", telefono:"SUBA", direccion:"3222151389", barrio:"", ciudad:"77", correo:"mslkpr1234@gmail.com" },
+    { razonSocial:"AMELIA SANDOVAL ROJAS", nit:"SALA DE BELLEZA COSMOPOLITAN HAIR", idEcoglobal:"39.547.665", telefono:"USAQUEN", direccion:"3114610430", barrio:"", ciudad:"79", correo:"ameliasandoval1967@hotmail.com" },
+    { razonSocial:"Saida Marlen", nit:"STYLOS LUZ", idEcoglobal:"39.640.868", telefono:"BOSA - SOACHA", direccion:"310 2927552 SOACHA", barrio:"", ciudad:"81", correo:"Saidaroa42@gmail.com - Velasquezluzmarina189@gmail.com" },
+    { razonSocial:"YAQUELINE PEREZ", nit:"JACOBS STYLE", idEcoglobal:"39657235", telefono:"ZONA CENTRO", direccion:"3002141817-3158667922", barrio:"", ciudad:"83", correo:"Laurangel1025@gmail.com" },
+    { razonSocial:"NIDIA ELVIRA GONZALEZ ESTRADA", nit:"COLAS Y BIGOTES", idEcoglobal:"39.657.894", telefono:"FONTIBON", direccion:"3134281675", barrio:"", ciudad:"84", correo:"nidiana.gonzalez@hotmail.com" },
+    { razonSocial:"MARTHA LUCIA ACERO ACOSTA", nit:"BLUE PET'S", idEcoglobal:"39.686.813", telefono:"ZONA SUR 1", direccion:"3028095872", barrio:"", ciudad:"85", correo:"eliza851015@hotmail.com" },
+    { razonSocial:"BLANCA INES HUERTAS SANCHEZ", nit:"FARMAYOR DROGUERIAS Y MINIMARKET", idEcoglobal:"39.789.486", telefono:"SUBA", direccion:"3219253413", barrio:"", ciudad:"86", correo:"Dvalero6052@hotmail.com" },
+    { razonSocial:"NOHORA PATRICIA PEREZ", nit:"NOHORA PATRICIA RODRIGUEZ", idEcoglobal:"40.398.883", telefono:"ALCAPARROS MADRID", direccion:"3133204147", barrio:"", ciudad:"87", correo:"noparipe83@hotmail.com" },
+    { razonSocial:"GLORIA INES TORRES", nit:"GT PELUQUERIA Y BARBERIA", idEcoglobal:"41.736.439", telefono:"CHAPINERO", direccion:"3108117951", barrio:"", ciudad:"88", correo:"centrodeesteticagloriatorres@gmail.com" },
+    { razonSocial:"Dx Patologovet", nit:"79.821.211", idEcoglobal:"222", telefono:"3138428572 - 3102548257", direccion:"Tv 73D \\#38c-41 Sur PISO 2", barrio:"", ciudad:"KENNEDY", correo:"dxpatologovet@gmail.com" },
+    { razonSocial:"RAZA ACADEMIA DE PELUQUERIA CANINA Y FELINA", nit:"1.024.479.566", idEcoglobal:"697", telefono:"3162583529", direccion:"AV ESPERANZA \\#81-38 2DO PISO", barrio:"", ciudad:"FONTIBON", correo:"info@eduraza.com.co" },
+    { razonSocial:"VARIEDADES LORA", nit:"80.438.294-0", idEcoglobal:"247", telefono:"3505081480", direccion:"CRR 89B \\# 53A - 08 SUR", barrio:"", ciudad:"BOSA - SOACHA", correo:"luisrincon1213@gmail.com" },
+    { razonSocial:"MECHUDOS DOG", nit:"79.759.137-6", idEcoglobal:"217", telefono:"3107790275, 3107751374", direccion:"Carrera 9 39 b 07 leon13 soacha", barrio:"", ciudad:"BOSA - SOACHA", correo:"veterinariamechudosdogs@gmail.com" },
+    { razonSocial:"SALON DE BELLEZA LIZETH", nit:"1.016.032.313", idEcoglobal:"620", telefono:"3134652219", direccion:"KR 93 D 72 SUR 47 CS 11", barrio:"", ciudad:"BOSA - SOACHA", correo:"andreitasrias\\_@hotmail.com" },
+    { razonSocial:"STYLOS LUZ", nit:"39.640.868", idEcoglobal:"81", telefono:"310 2927552 SOACHA", direccion:"Diagonal 36\\#17\\_29 Barrio el trébol soacha", barrio:"", ciudad:"BOSA - SOACHA", correo:"Saidaroa42@gmail.com - Velasquezluzmarina189@gmail.com" },
+    { razonSocial:"DROGUERIA SALUD Y BIENESTAR DE BOSA", nit:"1.012.392.639", idEcoglobal:"573", telefono:"320 3932790", direccion:"Carrera 81f bis \\# 70a 03 sur BOSA PALESTINA", barrio:"", ciudad:"BOSA - SOACHA", correo:"leisandoval22@gmail.com" },
+    { razonSocial:"VETERINARIA CASTILLA", nit:"901,423,940", idEcoglobal:"431", telefono:"3044487828", direccion:"AVENIDA CALLE 8-No.79-15", barrio:"", ciudad:"KENNEDY", correo:"qualityvetinc@gmail.com" },
+    { razonSocial:"CONSULTORIO ODONTOLOGICO MADRE TERESA", nit:"51.828.529", idEcoglobal:"103", telefono:"3165222250", direccion:"CLL 44 SUR \\# 25A - 14", barrio:"", ciudad:"ZONA SUR 1", correo:"oraya2007@gmail.com" },
+    { razonSocial:"CANITAS DORADAS HOGAR GERONTOLOGICO", nit:"52,037,190", idEcoglobal:"108", telefono:"3222104018", direccion:"CRA 71F \\# 6D - 55", barrio:"", ciudad:"KENNEDY", correo:"alexa5129@hotmail.com" },
+    { razonSocial:"DALAS 2.0", nit:"1.000.784.163", idEcoglobal:"532", telefono:"3108508710", direccion:"CR 77L \\# 54B -08 SUR", barrio:"", ciudad:"KENNEDY", correo:"dalas.20@hotmail.com" },
+    { razonSocial:"FARMA SUSALUD TIMIZA", nit:"1,030,682,425", idEcoglobal:"735", telefono:"3108508710", direccion:"CLL 52A SUR \\# 77L -20", barrio:"", ciudad:"KENNEDY", correo:"dalas.20@hotmail.com" },
+    { razonSocial:"CONSULTORIO ODONTOLOGICO JUAN CAMILO ARIAS CUELLAR", nit:"1.090.489.751", idEcoglobal:"840", telefono:"3144333696", direccion:"calle 7 \\# 11-75", barrio:"", ciudad:"MADRID", correo:"odjuncamiloarias@gmail.com" },
+    { razonSocial:"DROGUERIAS SUPERVIDA", nit:"79.316.893", idEcoglobal:"199", telefono:"3124257516", direccion:"CLL 6 No.13-78", barrio:"", ciudad:"STA MATILDE MADRID", correo:"Drogueriasupervida@gmail.com" },
+    { razonSocial:"CONSULTORIO VETERINARIO LOLIVETS", nit:"79.746.426", idEcoglobal:"216", telefono:"305 2497943", direccion:"CRR 100 \\# 23 - 90 LOCAL 103", barrio:"", ciudad:"FONTIBON", correo:"lolivets@hotmail.com" },
+    { razonSocial:"Spa y Peluquería Murano Beauty", nit:"1.003.690.007", idEcoglobal:"546", telefono:"304 6694456 -3016790587", direccion:"Dg 15b \\#104 46 Fontibón Zona Franca Casa 2", barrio:"", ciudad:"FONTIBON", correo:"giselvanessarojas02@gmail.com" },
+    { razonSocial:"Emy Study Nails", nit:"52.267.801", idEcoglobal:"122", telefono:"3132695099 - 3115548141 FONTIBON", direccion:"Av Calle 24 \\#74 - 29 Barrio modelia", barrio:"", ciudad:"FONTIBON", correo:"emi.agude@hotmail.com" },
+    { razonSocial:"OPTICA ANDES FONTIBON - BIOSANIT (No.781)", nit:"901,308,210", idEcoglobal:"1764", telefono:"3108687668", direccion:"CRA 100 N. 19-02 L 2", barrio:"", ciudad:"FONTIBON", correo:"gerencia.grupoandes@gmail.com" },
+    { razonSocial:"PIEL CANELA", nit:"1.033.711.653", idEcoglobal:"762", telefono:"3105525203", direccion:"Avenida Calle 68 17 83 Local 4", barrio:"", ciudad:"BARRIOS UNIDOS", correo:"pielc2023@gmail.com" },
+    { razonSocial:"ROLS DENTAL GROUP", nit:"1.026.300.034", idEcoglobal:"710", telefono:"3204529031", direccion:"CRA 75 \\# 23B-35", barrio:"", ciudad:"FONTIBON", correo:"judilisi@gmail.com" },
+    { razonSocial:"MOON CAPILAR", nit:"102077422 -1", idEcoglobal:"1689", telefono:"313 4596817", direccion:"Carrera 80a bis 22d 72", barrio:"", ciudad:"FONTIBON", correo:"Andreacano281@gmail.com" },
+    { razonSocial:"LUNA & SPA", nit:"53.134.905", idEcoglobal:"175", telefono:"3227181823", direccion:"CARRERA 99 \\# 20-17", barrio:"", ciudad:"FONTIBON", correo:"marthachispasramirezluna@gmail.com" },
+    { razonSocial:"SALON DE BELLEZA ROSSY", nit:"1.016.035.629", idEcoglobal:"621", telefono:"3208694372", direccion:"KR.100No.16b-56", barrio:"", ciudad:"FONTIBON", correo:"ladyserranoh@gmail.com" },
+    { razonSocial:"HAIR FASHION MOGOLLON", nit:"79.842.272", idEcoglobal:"223", telefono:"3103885865-3114493525", direccion:"CRR 87 C \\# 41 - 46 SUR", barrio:"", ciudad:"KENNEDY", correo:"jmogollon45@gmail.com" },
+    { razonSocial:"Drogueria Sama JP Farmacenter", nit:"52884683-2", idEcoglobal:"1658", telefono:"3115212006", direccion:"Cra 81 a 11 d 02 Barrio Santa Catalina", barrio:"", ciudad:"KENNEDY", correo:"farmacenter.sama@gmail.com" },
+    { razonSocial:"Andrea Acuña", nit:"Tayrona Spa", idEcoglobal:"41.748.070", telefono:"PUENTE ARANDA", direccion:"305 8148435", barrio:"", ciudad:"89", correo:"saf.colombia@outlook.com" },
+    { razonSocial:"MARTA RAMOS CARDENAS", nit:"PELUQUERIA ESCULTURE", idEcoglobal:"41.750.661", telefono:"SUBACHOQUE CTRO.", direccion:"3142126493", barrio:"", ciudad:"90", correo:"marthahelenaramoscardenas@hotmail.com" },
+    { razonSocial:"MONROY RAMIREZ MARIA ISABEL", nit:"Clinica veterinaria el triunfo animal", idEcoglobal:"41.963.626", telefono:"ENGATIVA", direccion:"3143213390", barrio:"", ciudad:"91", correo:"clinicaveterinaria619@gmail.com" },
+    { razonSocial:"LINA MARCELA BAHOS LARGO", nit:"LINA MARCELA BAHOS LARGO", idEcoglobal:"43.204.977", telefono:"ZIPAQUIRA, SAN RAFAEL", direccion:"3214628061-3136255183", barrio:"", ciudad:"92", correo:"wilsonjuan58@gmail.com" },
+    { razonSocial:"YANETH ESMERALDA DUARTE ACOSTA", nit:"SALA DE BELLEZA ESMERALDA DUARTE", idEcoglobal:"46.669.264", telefono:"TEUSAQUILLO", direccion:"3183918942", barrio:"", ciudad:"95", correo:"esmeraldaacosta021@gmail.com" },
+    { razonSocial:"LUZ YANETH LOPEZ", nit:"LUZ YANETH LOPEZ VARGAS", idEcoglobal:"46.670.861", telefono:"SUBA", direccion:"3114607586", barrio:"", ciudad:"96", correo:"lopezyaneth13@gmail.com" },
+    { razonSocial:"PATRICIA JIMENEZ CANO", nit:"SALA DE BELLEZA AMBROSIA", idEcoglobal:"51.645.481", telefono:"KENNEDY", direccion:"3012664663", barrio:"", ciudad:"97", correo:"ingenieriamontajesdeaire@gmail.com" },
+    { razonSocial:"NANCY GARCES", nit:"NANCY DEL CARMEN GARCES", idEcoglobal:"51.667.585", telefono:"SUBA", direccion:"3214198164 - 315 5147392", barrio:"", ciudad:"99", correo:"Garcesnancy@gmail.com" },
+    { razonSocial:"MARIA GLORIA GOMEZ", nit:"DIS BELLEZA GLORIA", idEcoglobal:"51.786.987", telefono:"ZONA SUR 1", direccion:"3214462296", barrio:"", ciudad:"100", correo:"Lchernandez752@misena.edu.co" },
+    { razonSocial:"MARIA NUBIA SIERRA RODRIGUEZ", nit:"ODALISCA SPA", idEcoglobal:"51821845", telefono:"CHAPINERO", direccion:"3153372839", barrio:"", ciudad:"102", correo:"Jen07velacas@gmail.com" },
+    { razonSocial:"MARTHA ESTHER CASTILLO ACERO", nit:"CONSULTORIO ODONTOLOGICO MADRE TERESA", idEcoglobal:"51.828.529", telefono:"ZONA SUR 1", direccion:"3165222250", barrio:"", ciudad:"103", correo:"oraya2007@gmail.com" },
+    { razonSocial:"MARIA ALEXANDRA PORRAS CAMELO", nit:"CANITAS DORADAS HOGAR GERONTOLOGICO", idEcoglobal:"52037190", telefono:"KENNEDY", direccion:"3222104018", barrio:"", ciudad:"108", correo:"alexa5129@hotmail.com" },
+    { razonSocial:"FLOR PATRICIA SUAREZ", nit:"SALA DE BELLEZA LISOS Y RIZOS", idEcoglobal:"52.095.047", telefono:"BARRIOS UNIDOS", direccion:"3105646427", barrio:"", ciudad:"109", correo:"patyheart2010@hotmail.com" },
+    { razonSocial:"ESMERALDA DIAZ VELASQUEZ", nit:"SPA PERROS Y GATOS", idEcoglobal:"52.103.862", telefono:"BOSA - SOACHA", direccion:"3108510204-3103384066", barrio:"", ciudad:"111", correo:"esmeraldive19@gmail.com" },
+    { razonSocial:"CLAUDIA CONSUELO GRANADOS MEDINA", nit:"DR CLAUDIA MEDINA", idEcoglobal:"52174659", telefono:"KENNEDY", direccion:"3108178720", barrio:"", ciudad:"113", correo:"claudocmg@yahoo.com" },
+    { razonSocial:"LUZ ANGELICA VARGAS", nit:"PELUQUERIA BEAUTY STYLES", idEcoglobal:"52.188.394", telefono:"ZONA CENTRO", direccion:"3013410689", barrio:"", ciudad:"115", correo:"Luzangroa0305@gimail.com" },
+    { razonSocial:"ADRIANA ALVARADO", nit:"BEAUTY PALACE", idEcoglobal:"52.188.754", telefono:"FUNZA", direccion:"3236233856- 3507143255", barrio:"", ciudad:"116", correo:"Loquita3775@outlook.com" },
+    { razonSocial:"CARLOS PULIDO Y SONIA PARRA", nit:"SALUDENT+PLUS", idEcoglobal:"52.214.835", telefono:"SUBA", direccion:"313 3803810-3144917984", barrio:"", ciudad:"118", correo:"superdentodontologia@gmail.com" },
+    { razonSocial:"NANCY MEDINA", nit:"LOTO GLOW AND GLAN", idEcoglobal:"52.222.217", telefono:"CENTRO MOSQUERA", direccion:"3153370441", barrio:"", ciudad:"119", correo:"nancymv963@hotmail.com" },
+    { razonSocial:"ROSALBA SANCHEZ", nit:"D\\`ROCHO\\`S STILOS", idEcoglobal:"52.241.109", telefono:"ENGATIVA", direccion:"3124995286", barrio:"", ciudad:"120", correo:"Rochys7722@gmail.con" },
+    { razonSocial:"EMILCE AGUDELO GONZALEZ", nit:"Emy Study Nails", idEcoglobal:"52.267.801", telefono:"FONTIBON", direccion:"3132695099 - 3115548141 FONTIBON", barrio:"", ciudad:"122", correo:"emi.agude@hotmail.com" },
+    { razonSocial:"MARIA TERESA SANDOVAL ROJAS", nit:"MARIA TERESA SANDOVAL ROJAS", idEcoglobal:"52.329.306", telefono:"USAQUEN", direccion:"313 4025857 313 4025857", barrio:"", ciudad:"127", correo:"Mtsandoval2@hotmail.com" },
+    { razonSocial:"MARTHA YANETT CARVAJAL TRUJILLO", nit:"MARTHA YANETT CARVAJAL TRUJILLO", idEcoglobal:"52.334.217", telefono:"USAQUEN", direccion:"3107779062", barrio:"", ciudad:"128", correo:"Marthacarvajal0701@gmail.com" },
+    { razonSocial:"LUZ MAIRA RIOS TORRES", nit:"LUZ MAIRA RIOS TORRES", idEcoglobal:"52.350.500", telefono:"LAS HERMANDADES MADRID", direccion:"3143770174", barrio:"", ciudad:"129", correo:"luzmairart@gmail.com" },
+    { razonSocial:"MARIA ANGELICA OSORIO DIAZ", nit:"MARIA ANGELICA OSORIO DIAZ", idEcoglobal:"52.391.622", telefono:"ENGATIVA", direccion:"3115791694-3143986139", barrio:"", ciudad:"131", correo:"mangelicaosorio4@gmail.com" },
+    { razonSocial:"ALEXANDRA QUEMBA", nit:"ALEXANDRA QUEMBA", idEcoglobal:"52.419.082", telefono:"FONTIBON", direccion:"3138102714", barrio:"", ciudad:"132", correo:"SAQUEMBOTI@GMAIL.COM" },
+    { razonSocial:"PAOLA ANDREA ARDILA MAHECHA", nit:"MUUR", idEcoglobal:"52.422.986", telefono:"SUBA", direccion:"3114424532", barrio:"", ciudad:"133", correo:"ardilapao@hotmail.com" },
+    { razonSocial:"PAULA ANDREA LOZADA", nit:"PAULA ANDREA LOZADA", idEcoglobal:"52.427.679", telefono:"LOS LAURELES FACATATIVA", direccion:"3107855936", barrio:"", ciudad:"134", correo:"Orthopaula@hotmail.com" },
+    { razonSocial:"DANILSA GORDILLO", nit:"DANILSA GORDILLO", idEcoglobal:"52.441.652", telefono:"ZONA SUR 1", direccion:"3015621710 MAYO", barrio:"", ciudad:"135", correo:"danniheredia1212@gmail.com" },
+    { razonSocial:"SONIA CAROLINA RODRIGUEZ BELTRAN", nit:"SONIA CAROLINA RODRIGUEZ BELTRAN", idEcoglobal:"52.523.989", telefono:"ZONA SUR 1", direccion:"3114899522", barrio:"", ciudad:"139", correo:"Chipazaque15@yahoo.es" },
+    { razonSocial:"Ivy Andrea Cuéllar Rodríguez", nit:"Optica visión salud.ver", idEcoglobal:"52.530.356", telefono:"SUBA", direccion:"3108583057 3108583057", barrio:"", ciudad:"141", correo:"ivyandreac@yahoo.com" },
+    { razonSocial:"OLGA LUCIA MORA", nit:"DISEÑOS DEL CABELLO OLGA MORA", idEcoglobal:"52619590", telefono:"KENNEDY", direccion:"3222913374", barrio:"", ciudad:"143", correo:"dcolgamoraestetic@gmail.com" },
+    { razonSocial:"MONICA ARRIETA MOLINA", nit:"MONICA ARRIETA MOLINA", idEcoglobal:"52.646.926", telefono:"LOS LAURELES FACATATIVA", direccion:"3166219551", barrio:"", ciudad:"144", correo:"bombiarrieta@gmail.com" },
+    { razonSocial:"VIVIANA PIRABON", nit:"DISTRIBUIDORA RAPUNZEL", idEcoglobal:"52.661.408", telefono:"KR.1No 3-57 MOSQUERA", direccion:"3134042178", barrio:"", ciudad:"145", correo:"Vivipirajon5@gmail.com" },
+    { razonSocial:"CINDY DAIANA REYES MORA", nit:"CINDY DAIANA REYES MORA", idEcoglobal:"52.731.029", telefono:"KENNEDY", direccion:"3208526582", barrio:"", ciudad:"149", correo:"casahogaramavid@gmail.com" },
+    { razonSocial:"LILIANA JIMENEZ QUINTERO", nit:"CLINICA VETERINARIA OCCIDENTE", idEcoglobal:"52.788.516", telefono:"ENGATIVA", direccion:"312 4399291 - 3112383666", barrio:"", ciudad:"152", correo:"vetocclab@gmail.com" },
+    { razonSocial:"ANA ELVIRA CHAPARRO", nit:"ANA ELVIRA CHAPARRO", idEcoglobal:"52.789.171", telefono:"ENGATIVA", direccion:"3208524203", barrio:"", ciudad:"153", correo:"anitachaparro19@gmail.com" },
+    { razonSocial:"LADY PAOLA CASTRO SIERRA", nit:"LADY PAOLA CASTRO SIERRA", idEcoglobal:"52,811,199", telefono:"CHAPINERO", direccion:"3194705035", barrio:"", ciudad:"154", correo:"paola63@gmail.com" },
+    { razonSocial:"SANDRA JOHANNA ALDANA NIETO", nit:"SANDRA JOHANNA ALDANA NIETO", idEcoglobal:"52.906.719", telefono:"ENGATIVA", direccion:"3504491655", barrio:"", ciudad:"158", correo:"s.joha.a.n@hotmail.com" },
+    { razonSocial:"DIANA CAROLINA ORTEGA ORTEGA", nit:"DIANA CAROLINA ORTEGA ORTEGA", idEcoglobal:"52.956.993", telefono:"ZONA SUR 1", direccion:"3118871951-3114903327", barrio:"", ciudad:"161", correo:"alejaortegao@gmail.com" },
+    { razonSocial:"BRAVO VANEGAS SANDRA MILENA", nit:"Óptica Dr.Arias", idEcoglobal:"52.989.516", telefono:"SUBA", direccion:"3173243803", barrio:"", ciudad:"163", correo:"opticaedusan@hotmail.com" },
+    { razonSocial:"DIANA CAROLINA MORENO", nit:"PELUDITOS MARKET", idEcoglobal:"52.997.422", telefono:"USAQUEN", direccion:"3202356814", barrio:"", ciudad:"165", correo:"Peluditosmarket@yahoo.es" },
+    { razonSocial:"JENNY CAROLINA VELANDIA MARTINEZ", nit:"JENNY CAROLINA VELANDIA MARTINEZ", idEcoglobal:"53.003.179", telefono:"ENGATIVA", direccion:"3107791976-3143076446", barrio:"", ciudad:"166", correo:"Vetlacasadeloso@gmail.com" },
+    { razonSocial:"NELFI JOHANA POLANIA AVILEZ", nit:"JOHANA SALON", idEcoglobal:"53.004.669", telefono:"ENGATIVA", direccion:"3214541989", barrio:"", ciudad:"167", correo:"polita2651dsiad@gmail.com" },
+    { razonSocial:"yinna paola guerra delgado", nit:"BARBER NAILS M Y J", idEcoglobal:"53.031.981", telefono:"FONTIBON", direccion:"3016732310 3016732310", barrio:"", ciudad:"168", correo:"guerrayinna@gmail.com" },
+    { razonSocial:"YURY MORA", nit:"ANALY SPA", idEcoglobal:"53.073.217", telefono:"ENGATIVA", direccion:"3213268718", barrio:"", ciudad:"172", correo:"Sofiagarmo@hotmail.com" },
+    { razonSocial:"MARIBEL FLOREZ QUIROGA", nit:"MARIBEL FLOREZ QUIROGA", idEcoglobal:"53.083.521", telefono:"MADRID", direccion:"3016220705", barrio:"", ciudad:"173", correo:"maryflorezquiroga@gmail.com" },
+    { razonSocial:"DIANA PAOLA VIRGEZ JIMENEZ", nit:"NIKSAM STUDIO", idEcoglobal:"53.100.766", telefono:"KENNEDY o CIUDAD BOLIVAR", direccion:"3044408282", barrio:"", ciudad:"174", correo:"Diana.paolauni@gmail.com" },
+    { razonSocial:"MARTHA CECILIA RAMIREZ LUNA", nit:"LUNA & SPA", idEcoglobal:"53.134.905", telefono:"FONTIBON", direccion:"3227181823", barrio:"", ciudad:"175", correo:"marthachispasramirezluna@gmail.com" },
+    { razonSocial:"GLORIA CAROLINA REY MUNEVAR", nit:"GLORIA CAROLINA REY MUNEVAR", idEcoglobal:"53.177.659", telefono:"CHAPINERO", direccion:"3225110205", barrio:"", ciudad:"176", correo:"asenet.estrategias.gmail.com" },
+    { razonSocial:"DIANA MILENA CASTILLO", nit:"HIGIA GESTION AMBIENTAL", idEcoglobal:"53.894.464", telefono:"BOSA - SOACHA", direccion:"3194848106", barrio:"", ciudad:"177", correo:"dianacastillo09@hotmail.es" },
+    { razonSocial:"OLGA LUCIA TELLO SANCHEZ", nit:"OLGA LUCIA TELLO SANCHEZ", idEcoglobal:"63369154", telefono:"TEUSAQUILLO", direccion:"3143904181", barrio:"", ciudad:"180", correo:"odoltesa@hotmail.com" },
+    { razonSocial:"LUZ MARINA ZAMBRANO CARVAJAL", nit:"DROGUERIA LA CUMBRE YCC", idEcoglobal:"65.732.324", telefono:"PUENTE ARANDA", direccion:"3177708934", barrio:"", ciudad:"181", correo:"luzmarina6573car@gmail.com" },
+    { razonSocial:"GERMAN ALBERTO LOPEZ FORERO", nit:"CLINICA VETERINARIA CACHORRITOS", idEcoglobal:"74.360.980", telefono:"BOSA - SOACHA", direccion:"3229364656", barrio:"", ciudad:"186", correo:"lgerman699@gmail.com" },
+    { razonSocial:"CEJAS Y PESTAÑAS", nit:"1.233.368", idEcoglobal:"2", telefono:"3224096470", direccion:"CLL9A No.7-03", barrio:"", ciudad:"ALCAPARROS Madrid", correo:"" },
+    { razonSocial:"MAWUILL ALEXANDRA GUEDEZ", nit:"CEJAS Y PESTAÑAS", idEcoglobal:"1.233.368", telefono:"ALCAPARROS Madrid", direccion:"3224096470", barrio:"", ciudad:"2", correo:"" },
+    { razonSocial:"DEYSY ARDILA ARDILA", nit:"DEYSY ARDILA ARDILA", idEcoglobal:"5.205.022", telefono:"SUBA", direccion:"3138456878", barrio:"", ciudad:"14", correo:"" },
+    { razonSocial:"MARTA GOMEZ SEVILLANO", nit:"MARTA GOMEZ SEVILLANO", idEcoglobal:"35.332.326", telefono:"SUBACHOQUE CTRO.", direccion:"3162659181", barrio:"", ciudad:"59", correo:"" },
+    { razonSocial:"ANA MARIA HERNANDEZ", nit:"ANA MARIA HERNANDEZ", idEcoglobal:"35.374.629", telefono:"ANAPOIMA", direccion:"3214774925", barrio:"", ciudad:"61", correo:"" },
+    { razonSocial:"Drogueria y minimercado Don josé", nit:"1.007.422.456", idEcoglobal:"554", telefono:"3219353911", direccion:"CLL 21 \\# 1 - 63 ESTE", barrio:"", ciudad:"MADRID", correo:"" },
+    { razonSocial:"SERVICES CAN", nit:"900.337.560", idEcoglobal:"350", telefono:"3104076130", direccion:"CL 20 103A 15", barrio:"", ciudad:"FONTIBON", correo:"" },
+    { razonSocial:"LLAMATRINA BARBERIA Y ESTETICA INTEGRAL", nit:"1.030.570.826", idEcoglobal:"717", telefono:"322 8673656- 321 4453566 3115254001", direccion:"Calle 40b sur \\#87b 23 segundo piso Patio bonito", barrio:"", ciudad:"KENNEDY", correo:"" },
+    { razonSocial:"MARLEN RUIZ GUARGUATI", nit:"SPA Y ESTETICA MARLEN RUIZ", idEcoglobal:"52.006.014", telefono:"TEUSAQUILLO", direccion:"3163387216 3163387216", barrio:"", ciudad:"107", correo:"" },
+    { razonSocial:"ADRIANA ESTHER GUERRERO GOMEZ", nit:"PELUQUERIA INFANTIL MAJJOS", idEcoglobal:"52.327.010", telefono:"MOSQUERA", direccion:"310 7906417 NUEVO 22000", barrio:"", ciudad:"126", correo:"" },
+    { razonSocial:"PEREZ MENJURA ADRIANA", nit:"OPTICA LABORATORIO MONSERRATE", idEcoglobal:"52486202", telefono:"ZONA CENTRO", direccion:"3138336809", barrio:"", ciudad:"137", correo:"" },
+    { razonSocial:"CLAUDIA MARCELA PACHECO JURADO", nit:"CENTRO DE ESTETICA Y FISIOTERAPIA FISIO T ESTETIC", idEcoglobal:"52.526.115", telefono:"ZONA SUR 2", direccion:"311 2754112", barrio:"", ciudad:"140", correo:"" },
+    { razonSocial:"MAYERLY LOPEZ REAL", nit:"PODO CARE", idEcoglobal:"902035429", telefono:"MOSQUERA", direccion:"3216775974", barrio:"", ciudad:"160", correo:"" },
+    { razonSocial:"RAMIRO VEGA MARTINEZ", nit:"DROGUERIA ANAPOIMA I", idEcoglobal:"74.322.079", telefono:"ANAPOIMA", direccion:"3204092173", barrio:"", ciudad:"185", correo:"" }
+  ];
+
+  /* Conductores y vehículos piloto de la flota de Ecoglobal. */
+  var SEED_CONDUCTORES = [
+    { nombre:"Jaime Villa", cedula:"1073504880", placa:"NOW650", tipoVehiculo:"", auxiliar:"", cedulaAuxiliar:"" },
+    { nombre:"Cristian Mayorga", cedula:"1073165828", placa:"LGL492", tipoVehiculo:"", auxiliar:"", cedulaAuxiliar:"" },
+    { nombre:"Jhon Grajales", cedula:"1023880099", placa:"EXZ943", tipoVehiculo:"", auxiliar:"", cedulaAuxiliar:"" },
+    { nombre:"Juan Camilo Sierra Daza", cedula:"1031802326", placa:"", tipoVehiculo:"Auxiliar", auxiliar:"", cedulaAuxiliar:"" }
+  ];
+
+  var clientes = [];
+  var conductores = [];
+  var manifiestosCache = [];
+  var firmaDataUrl = null;
+
+  /* =========================================================
+     Almacenamiento: prioridad de nube real
+     1) Supabase (si el usuario conectó su proyecto)  -> nube compartida real
+     2) window.storage (si se abre dentro de Claude)  -> nube de Claude
+     3) localStorage del navegador                    -> modo local sin nube
+  ========================================================= */
+  var SUPABASE_CONFIG_KEY = "_supabase_config"; // siempre en localStorage: es solo la conexión, no los datos
+
+  /* Proyecto de Gustavo ya conectado por defecto (ecoglobal-manifiestos).
+     La "anon public key" de Supabase está diseñada para ir embebida en el
+     cliente — no es una contraseña ni un secreto, así que es seguro dejarla
+     aquí. Se puede reemplazar desde el botón ☁️ si se conecta otro proyecto. */
+  var DEFAULT_SUPABASE_CONFIG = {
+    url: "https://fbywziyyyxaqubzgjllw.supabase.co",
+    key: "sb_publishable_-K2u-JGeFkpJVrTkVvuofg_R6NER67e"
+  };
+
+  function getSupabaseConfig(){
+    try {
+      var raw = localStorage.getItem(SUPABASE_CONFIG_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    return DEFAULT_SUPABASE_CONFIG;
+  }
+  function setSupabaseConfig(cfg){
+    try { localStorage.setItem(SUPABASE_CONFIG_KEY, JSON.stringify(cfg)); } catch(e){}
+  }
+  function clearSupabaseConfig(){
+    // Guarda una anulación explícita en vez de borrar, para no volver a caer
+    // en la configuración por defecto de arriba.
+    try { localStorage.setItem(SUPABASE_CONFIG_KEY, JSON.stringify({ url:"", key:"" })); } catch(e){}
+  }
+  function hasSupabase(){
+    var cfg = getSupabaseConfig();
+    return !!(cfg && cfg.url && cfg.key);
+  }
+  function supabaseHeaders(cfg, extra){
+    var h = { "apikey": cfg.key, "Authorization": "Bearer " + cfg.key, "Content-Type": "application/json" };
+    if (extra) for (var k in extra) h[k] = extra[k];
+    return h;
+  }
+  function supabaseBaseUrl(cfg){ return cfg.url.replace(/\/+$/, ""); }
+
+  var lastSupabaseError = ""; // último error real de Supabase, para mostrarlo en vez de fallar en silencio
+
+  function supabaseGet(key){
+    var cfg = getSupabaseConfig();
+    var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage?key=eq." + encodeURIComponent(key) + "&select=value";
+    return fetch(url, { headers: supabaseHeaders(cfg) })
+      .then(function(r){
+        if (r.ok) { lastSupabaseError = ""; return r.json(); }
+        return r.text().then(function(txt){
+          lastSupabaseError = "HTTP " + r.status + " al leer: " + txt;
+          console.error("Supabase GET error:", lastSupabaseError);
+          return [];
+        });
+      })
+      .then(function(rows){ return (rows && rows[0]) ? rows[0].value : null; })
+      .catch(function(e){
+        lastSupabaseError = "Error de red al leer de Supabase: " + (e && e.message ? e.message : e);
+        console.error(lastSupabaseError, e);
+        return null;
+      });
+  }
+  function supabaseSet(key, value){
+    var cfg = getSupabaseConfig();
+    var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage";
+    return fetch(url, {
+      method: "POST",
+      headers: supabaseHeaders(cfg, { "Prefer": "resolution=merge-duplicates" }),
+      body: JSON.stringify({ key: key, value: value })
+    }).then(function(r){
+      if (r.ok) { lastSupabaseError = ""; return true; }
+      return r.text().then(function(txt){
+        lastSupabaseError = "HTTP " + r.status + " al guardar: " + txt;
+        console.error("Supabase SET error:", lastSupabaseError);
+        return false;
+      });
+    }).catch(function(e){
+      lastSupabaseError = "Error de red al guardar en Supabase: " + (e && e.message ? e.message : e);
+      console.error(lastSupabaseError, e);
+      return false;
+    });
+  }
+  function supabaseList(prefix){
+    var cfg = getSupabaseConfig();
+    var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage?key=like." + encodeURIComponent(prefix + "*") + "&select=key";
+    return fetch(url, { headers: supabaseHeaders(cfg) })
+      .then(function(r){
+        if (r.ok) { lastSupabaseError = ""; return r.json(); }
+        return r.text().then(function(txt){
+          lastSupabaseError = "HTTP " + r.status + " al listar: " + txt;
+          console.error("Supabase LIST error:", lastSupabaseError);
+          return [];
+        });
+      })
+      .then(function(rows){ return rows.map(function(r){ return r.key; }); })
+      .catch(function(e){
+        lastSupabaseError = "Error de red al listar de Supabase: " + (e && e.message ? e.message : e);
+        console.error(lastSupabaseError, e);
+        return [];
+      });
+  }
+  function testSupabaseConnection(cfg){
+    var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage?select=key&limit=1";
+    return fetch(url, { headers: supabaseHeaders(cfg) }).then(function(r){ return r.ok; }).catch(function(){ return false; });
+  }
+
+  function hasCloudStorage(){
+    return typeof window.storage === "object" && window.storage !== null;
+  }
+  function storageGet(key){
+    if (hasSupabase()) return supabaseGet(key);
+    if (hasCloudStorage()){
+      return window.storage.get(key, true).then(function(r){ return r ? r.value : null; }).catch(function(){ return null; });
+    }
+    try { return Promise.resolve(localStorage.getItem(key)); }
+    catch(e){ return Promise.resolve(null); }
+  }
+  function storageSet(key, value){
+    if (hasSupabase()) return supabaseSet(key, value);
+    if (hasCloudStorage()){
+      return window.storage.set(key, value, true).then(function(r){ return !!r; }).catch(function(){ return false; });
+    }
+    try { localStorage.setItem(key, value); return Promise.resolve(true); }
+    catch(e){ return Promise.resolve(false); }
+  }
+  function storageList(prefix){
+    if (hasSupabase()) return supabaseList(prefix);
+    if (hasCloudStorage()){
+      return window.storage.list(prefix, true).then(function(r){ return (r && r.keys) || []; }).catch(function(){ return []; });
+    }
+    var keys = [];
+    try {
+      for (var i=0;i<localStorage.length;i++){
+        var k = localStorage.key(i);
+        if (!prefix || k.indexOf(prefix) === 0) keys.push(k);
+      }
+    } catch(e){}
+    return Promise.resolve(keys);
+  }
+
+  /* ---------- Panel de conexión a la nube ---------- */
+  function updateCloudBadge(){
+    var btn = $("btnCloudStatus");
+    if (hasSupabase()){
+      btn.textContent = "☁️ Conectado";
+      btn.className = "cloud-badge cloud-badge-on";
+    } else {
+      btn.textContent = "☁️ Sin nube";
+      btn.className = "cloud-badge cloud-badge-off";
+    }
+  }
+  function openCloudModal(){
+    var cfg = getSupabaseConfig() || { url:"", key:"" };
+    var modal = document.createElement("div");
+    modal.className = "modal-overlay";
+    modal.innerHTML =
+      '<div class="modal-sheet">' +
+        '<div class="modal-header"><div><h3>☁️ Conectar a la nube (Supabase)</h3></div>' +
+        '<button type="button" class="btn-icon" data-action="close-cloud-modal">✖️</button></div>' +
+        '<div class="cloud-modal-body">' +
+          '<p>Pega aquí el <b>Project URL</b> y la <b>clave anon public</b> de tu proyecto en Supabase (Settings → API). Se guardan solo en este navegador; los datos sí quedan en tu nube compartida.</p>' +
+          '<label class="field"><span class="field-label">Project URL</span><input type="text" id="cloudUrl" placeholder="https://xxxxx.supabase.co"></label>' +
+          '<label class="field"><span class="field-label">Anon public key</span><input type="text" id="cloudKey" placeholder="eyJhbGciOi..."></label>' +
+          '<div id="cloudToastBox"></div>' +
+          '<button type="button" class="btn-secondary" id="btnCloudSave" style="margin-top:8px;">Conectar</button>' +
+          (hasSupabase() ? '<button type="button" class="btn-erase" id="btnCloudDisconnect" style="margin-top:12px;">Desconectar y volver a modo local</button>' : '') +
+        '</div>' +
+      '</div>';
+    modal.addEventListener("click", function(e){
+      if (e.target === modal || (e.target.closest && e.target.closest('[data-action="close-cloud-modal"]'))) modal.remove();
+    });
+    document.body.appendChild(modal);
+    setVal("cloudUrl", cfg.url); setVal("cloudKey", cfg.key);
+
+    $("btnCloudSave").addEventListener("click", function(){
+      var url = val("cloudUrl").trim();
+      var key = val("cloudKey").trim();
+      if (!url || !key){ showToast("cloudToastBox", "err", "Completa las dos casillas."); return; }
+      var testCfg = { url: url, key: key };
+      $("btnCloudSave").textContent = "Probando conexión...";
+      testSupabaseConnection(testCfg).then(function(ok){
+        $("btnCloudSave").textContent = "Conectar";
+        if (!ok){
+          showToast("cloudToastBox", "err", "No se pudo conectar. Revisa la URL, la clave, y que hayas ejecutado el script SQL en Supabase.");
+          return;
+        }
+        setSupabaseConfig(testCfg);
+        updateCloudBadge();
+        showToast("cloudToastBox", "ok", "¡Conectado! Cargando tus directorios desde la nube...");
+        setTimeout(function(){
+          modal.remove();
+          reloadAllFromCloud();
+        }, 900);
+      });
+    });
+    var btnDisc = $("btnCloudDisconnect");
+    if (btnDisc){
+      btnDisc.addEventListener("click", function(){
+        clearSupabaseConfig();
+        updateCloudBadge();
+        modal.remove();
+        reloadAllFromCloud();
+      });
+    }
+  }
+  function reloadAllFromCloud(){
+    loadClientes().then(function(lista){
+      if (lista.length === 0){
+        return storageSet(CLIENTES_KEY, JSON.stringify(SEED_CLIENTES)).then(function(){ return SEED_CLIENTES.slice(); });
+      }
+      return lista;
+    }).then(function(lista){
+      clientes = lista; renderClientesList();
+      return loadConductores();
+    }).then(function(lista){
+      if (lista.length === 0){
+        return storageSet(CONDUCTORES_KEY, JSON.stringify(SEED_CONDUCTORES)).then(function(){ return SEED_CONDUCTORES.slice(); });
+      }
+      return lista;
+    }).then(function(lista){
+      conductores = lista; renderConductoresList();
+    });
+  }
+
+  /* ---------- Resiembra manual (con feedback visible) ---------- */
+  function resembrarClientes(){
+    var btn = $("btnResembrarClientes");
+    btn.disabled = true; btn.textContent = "⏳ Cargando...";
+    storageSet(CLIENTES_KEY, JSON.stringify(SEED_CLIENTES)).then(function(ok){
+      btn.disabled = false; btn.textContent = "🔄 Recargar empresas de la BASE MAESTRA";
+      if (ok){
+        clientes = SEED_CLIENTES.slice();
+        renderClientesList();
+        showToast("resembrarClientesToast", "ok", hasSupabase()
+          ? (SEED_CLIENTES.length + " empresas cargadas en Supabase (nube compartida).")
+          : (SEED_CLIENTES.length + " empresas cargadas localmente (sin nube conectada)."));
+      } else {
+        showToast("resembrarClientesToast", "err", "No se pudo escribir en la nube. Revisa que el botón ☁️ diga \"Conectado\" y que hayas ejecutado el script SQL en Supabase.");
+      }
+    });
+  }
+  function resembrarConductores(){
+    var btn = $("btnResembrarConductores");
+    btn.disabled = true; btn.textContent = "⏳ Cargando...";
+    storageSet(CONDUCTORES_KEY, JSON.stringify(SEED_CONDUCTORES)).then(function(ok){
+      btn.disabled = false; btn.textContent = "🔄 Cargar los 4 conductores piloto";
+      if (ok){
+        conductores = SEED_CONDUCTORES.slice();
+        renderConductoresList();
+        showToast("resembrarConductoresToast", "ok", hasSupabase()
+          ? "4 conductores cargados en Supabase (nube compartida)."
+          : "4 conductores cargados localmente (sin nube conectada).");
+      } else {
+        showToast("resembrarConductoresToast", "err", "No se pudo escribir en la nube. Revisa que el botón ☁️ diga \"Conectado\" y que hayas ejecutado el script SQL en Supabase.");
+      }
+    });
+  }
+
+  /* ---------- Helpers DOM ---------- */
+  function $(id){ return document.getElementById(id); }
+  function val(id){ var el = $(id); return el ? el.value : ""; }
+  function setVal(id, v){ var el = $(id); if (el) el.value = v == null ? "" : v; }
+  function escapeHtml(str){
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function(s){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s];
+    });
+  }
+  function showToast(boxId, type, text){
+    var box = $(boxId);
+    box.innerHTML = '<div class="toast toast-' + (type === "ok" ? "ok" : "err") + '">' + escapeHtml(text) + "</div>";
+    setTimeout(function(){ box.innerHTML = ""; }, 3200);
+  }
+
+  /* ---------- Consecutivo ---------- */
+  function loadConsecutivoConfig(){
+    return storageGet(CONSECUTIVO_KEY).then(function(raw){
+      if (raw) { try { return JSON.parse(raw); } catch(e){} }
+      return { prefijo:"R", siguiente:8148 };
+    });
+  }
+  function saveConsecutivoConfig(cfg){ return storageSet(CONSECUTIVO_KEY, JSON.stringify(cfg)); }
+  function formatConsecutivo(prefijo, n){ return prefijo + " " + String(n).padStart(5, "0"); }
+  /* Solo consulta cuál sería el próximo consecutivo, sin consumirlo todavía. */
+  function previsualizarConsecutivo(){
+    return loadConsecutivoConfig().then(function(cfg){
+      return { texto: formatConsecutivo(cfg.prefijo, cfg.siguiente), cfg: cfg };
+    });
+  }
+  /* Avanza el contador. Se llama SOLO después de confirmar que el
+     manifiesto ya quedó guardado, para no "quemar" números si algo falla. */
+  function confirmarConsumoConsecutivo(cfg){
+    var nuevo = { prefijo: cfg.prefijo, siguiente: cfg.siguiente + 1 };
+    return saveConsecutivoConfig(nuevo);
+  }
+  function renderConsecutivoLabel(){
+    loadConsecutivoConfig().then(function(cfg){
+      $("consecutivoLabel").textContent = formatConsecutivo(cfg.prefijo, cfg.siguiente);
+      setVal("cfgPrefijo", cfg.prefijo);
+      setVal("cfgSiguiente", cfg.siguiente);
+    });
+  }
+
+  /* ---------- Clientes / Conductores: carga ---------- */
+  function loadClientes(){
+    return storageGet(CLIENTES_KEY).then(function(raw){
+      if (raw) { try { return JSON.parse(raw); } catch(e){} }
+      return [];
+    });
+  }
+  function loadConductores(){
+    return storageGet(CONDUCTORES_KEY).then(function(raw){
+      if (raw) { try { return JSON.parse(raw); } catch(e){} }
+      return [];
+    });
+  }
+
+  /* ---------- Tabs ---------- */
+  function switchTab(id){
+    document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+    document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
+    $("view-" + id).classList.add("active");
+    document.querySelector('.tab-btn[data-tab="' + id + '"]').classList.add("active");
+    $("bottomBar").style.display = (id === "campo") ? "block" : "none";
+    if (id === "panel") loadTrazabilidad();
+    if (id === "clientes") renderClientesList();
+    if (id === "conductores") renderConductoresList();
+  }
+
+  /* ---------- Materiales: construcción del formulario ---------- */
+  function buildMaterialesForm(){
+    var html = MATERIALES.map(function(mat){
+      return (
+        '<details class="material-item">' +
+          '<summary>' +
+            '<span class="material-label"><span class="dot" style="background:' + mat.color + '"></span>' + escapeHtml(mat.label) + '</span>' +
+            '<span class="material-right">' +
+              '<span class="material-total" id="mat_' + mat.key + '_totaldisplay"></span>' +
+              '<span class="tag" style="background:' + mat.color + '">' + mat.tag + '</span>' +
+            '</span>' +
+          '</summary>' +
+          '<div class="material-fields">' +
+            '<label>Cantidad<input type="number" id="mat_' + mat.key + '_cantidad"></label>' +
+            '<label>UM<input type="text" id="mat_' + mat.key + '_um" value="KG"></label>' +
+            '<label>Empaque<input type="text" id="mat_' + mat.key + '_empaque"></label>' +
+            '<label>Cant. empaque<input type="number" id="mat_' + mat.key + '_cant"></label>' +
+            '<label class="span2">Total ($)<input type="number" id="mat_' + mat.key + '_total"></label>' +
+          '</div>' +
+        '</details>'
+      );
+    }).join("");
+    $("materialesContainer").innerHTML = html;
+  }
+  function recomputeTotalGeneral(){
+    var total = 0;
+    MATERIALES.forEach(function(m){ total += parseFloat(val("mat_" + m.key + "_total")) || 0; });
+    $("totalGeneralDisplay").textContent = "$" + total.toLocaleString("es-CO");
+  }
+
+  /* ---------- Autocompletar: clientes ---------- */
+  function filterClientes(q){
+    q = q.trim().toLowerCase();
+    if (!q) return [];
+    return clientes.filter(function(c){ return c.razonSocial.toLowerCase().indexOf(q) !== -1; }).slice(0, 6);
+  }
+  function renderClienteDropdown(){
+    var q = val("razonSocial");
+    var dd = $("clienteDropdown");
+    var results = filterClientes(q);
+    if (!q.trim()){ dd.style.display = "none"; dd.innerHTML = ""; return; }
+    if (results.length === 0){
+      dd.innerHTML = '<div class="dropdown-empty">Sin coincidencias en el directorio (' + clientes.length + ' empresas cargadas). Puedes seguir escribiendo manualmente.</div>';
+      dd.style.display = "block";
+      return;
+    }
+    dd.innerHTML = results.map(function(c){
+      var idx = clientes.indexOf(c);
+      return (
+        '<button type="button" class="dropdown-item" data-idx="' + idx + '">' +
+          '<span class="dropdown-icon">🏢</span>' +
+          '<span><span class="dropdown-title">' + escapeHtml(c.razonSocial) + '</span>' +
+          '<span class="dropdown-sub">NIT ' + escapeHtml(c.nit || "—") + " · " + escapeHtml(c.ciudad || "—") + '</span></span>' +
+        '</button>'
+      );
+    }).join("");
+    dd.style.display = "block";
+  }
+  function seleccionarCliente(idx){
+    var c = clientes[idx];
+    if (!c) return;
+    setVal("razonSocial", c.razonSocial);
+    setVal("nit", c.nit); setVal("idEcoglobal", c.idEcoglobal); setVal("telefono", c.telefono);
+    setVal("direccion", c.direccion); setVal("barrio", c.barrio); setVal("ciudad", c.ciudad); setVal("correo", c.correo);
+    $("clienteDropdown").style.display = "none";
+    $("clienteMatched").style.display = "flex";
+    $("wrapRazonSocial").classList.add("matched");
+  }
+
+  /* ---------- Autocompletar: conductores ---------- */
+  function filterConductores(q){
+    q = q.trim().toLowerCase();
+    if (!q) return [];
+    return conductores.filter(function(c){
+      return c.nombre.toLowerCase().indexOf(q) !== -1 || (c.placa || "").toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 6);
+  }
+  function renderConductorDropdown(){
+    var q = val("conductor");
+    var dd = $("conductorDropdown");
+    var results = filterConductores(q);
+    if (!q.trim()){ dd.style.display = "none"; dd.innerHTML = ""; return; }
+    if (results.length === 0){
+      dd.innerHTML = '<div class="dropdown-empty">Sin coincidencias en el directorio (' + conductores.length + ' conductores cargados). Puedes seguir escribiendo manualmente.</div>';
+      dd.style.display = "block";
+      return;
+    }
+    dd.innerHTML = results.map(function(c){
+      var idx = conductores.indexOf(c);
+      return (
+        '<button type="button" class="dropdown-item" data-idx="' + idx + '">' +
+          '<span class="dropdown-icon">🚚</span>' +
+          '<span><span class="dropdown-title">' + escapeHtml(c.nombre) + '</span>' +
+          '<span class="dropdown-sub">Placa ' + escapeHtml(c.placa || "—") + " · " + escapeHtml(c.tipoVehiculo || "—") + '</span></span>' +
+        '</button>'
+      );
+    }).join("");
+    dd.style.display = "block";
+  }
+  function seleccionarConductor(idx){
+    var c = conductores[idx];
+    if (!c) return;
+    setVal("conductor", c.nombre); setVal("cedulaConductor", c.cedula); setVal("placa", c.placa);
+    setVal("tipoVehiculo", c.tipoVehiculo); setVal("auxiliar", c.auxiliar); setVal("cedulaAuxiliar", c.cedulaAuxiliar);
+    $("conductorDropdown").style.display = "none";
+    $("conductorMatched").style.display = "flex";
+    $("wrapConductor").classList.add("matched");
+  }
+
+  /* ---------- Firma (canvas) ---------- */
+  function initSignaturePad(){
+    var canvas = $("firmaCanvas");
+    var ctx = canvas.getContext("2d");
+    var drawing = false;
+    var hasStrokes = false;
+
+    /* Ajusta la resolución interna del canvas a su tamaño real en pantalla
+       (usando devicePixelRatio para que el trazo no quede borroso ni
+       desalineado), conservando el dibujo si ya había uno. */
+    function resizeCanvas(){
+      var rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return; // aún no visible (ej. tab oculta)
+      var ratio = window.devicePixelRatio || 1;
+      var prevDataUrl = hasStrokes ? canvas.toDataURL("image/png") : null;
+      canvas.width = Math.round(rect.width * ratio);
+      canvas.height = Math.round(rect.height * ratio);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(ratio, ratio);
+      ctx.lineWidth = 2.4; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#1F2A24";
+      if (prevDataUrl){
+        var img = new Image();
+        img.onload = function(){ ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+        img.src = prevDataUrl;
+      }
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    // reintenta el ajuste tras el primer pintado, por si el tab estaba oculto al iniciar
+    setTimeout(resizeCanvas, 200);
+
+    function pos(e){
+      var rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+    function start(e){
+      e.preventDefault();
+      drawing = true;
+      if (canvas.setPointerCapture && e.pointerId != null){
+        try { canvas.setPointerCapture(e.pointerId); } catch(err){}
+      }
+      var p = pos(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      // punto mínimo visible aunque sea solo un toque, sin arrastre
+      ctx.lineTo(p.x + 0.1, p.y + 0.1);
+      ctx.stroke();
+    }
+    function move(e){
+      if (!drawing) return;
+      e.preventDefault();
+      var p = pos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      hasStrokes = true;
+      firmaDataUrl = canvas.toDataURL("image/png"); // se guarda en cada trazo, no solo al soltar
+    }
+    function end(e){
+      if (!drawing) return;
+      drawing = false;
+      hasStrokes = true;
+      if (canvas.releasePointerCapture && e && e.pointerId != null){
+        try { canvas.releasePointerCapture(e.pointerId); } catch(err){}
+      }
+      firmaDataUrl = canvas.toDataURL("image/png");
+    }
+
+    if (window.PointerEvent){
+      canvas.addEventListener("pointerdown", start);
+      canvas.addEventListener("pointermove", move);
+      canvas.addEventListener("pointerup", end);
+      canvas.addEventListener("pointercancel", end);
+    } else {
+      // navegadores muy antiguos sin soporte de Pointer Events
+      canvas.addEventListener("mousedown", start);
+      canvas.addEventListener("mousemove", move);
+      canvas.addEventListener("mouseup", end);
+      canvas.addEventListener("mouseleave", end);
+      canvas.addEventListener("touchstart", function(e){ start(e.touches[0]); }, { passive:false });
+      canvas.addEventListener("touchmove", function(e){ move(e.touches[0]); }, { passive:false });
+      canvas.addEventListener("touchend", function(e){ end(e.changedTouches[0]); });
+    }
+
+    $("btnBorrarFirma").addEventListener("click", function(){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      firmaDataUrl = null;
+      hasStrokes = false;
+    });
+  }
+
+  /* ---------- Guardar manifiesto ---------- */
+  function setBtnSaving(saving){
+    var btn = $("btnGuardar");
+    btn.disabled = saving;
+    btn.innerHTML = saving ? '<span class="spin">⏳</span> Subiendo a la nube...' : '🚚 Guardar y sincronizar';
+  }
+  function defaultDateTime(){
+    var now = new Date();
+    setVal("fecha", now.toISOString().slice(0,10));
+    setVal("hora", now.toTimeString().slice(0,5));
+  }
+  function resetForm(){
+    ["documentoTransporte","razonSocial","nit","idEcoglobal","telefono","direccion","barrio","ciudad",
+     "solicitante","cedulaSolicitante","correo","conductor","cedulaConductor","placa","tipoVehiculo",
+     "auxiliar","cedulaAuxiliar","entregaNombre","entregaCC","entregaCargo"].forEach(function(id){ setVal(id, ""); });
+    MATERIALES.forEach(function(m){
+      setVal("mat_" + m.key + "_cantidad", ""); setVal("mat_" + m.key + "_um", "KG");
+      setVal("mat_" + m.key + "_empaque", ""); setVal("mat_" + m.key + "_cant", "");
+      setVal("mat_" + m.key + "_total", ""); $("mat_" + m.key + "_totaldisplay").textContent = "";
+    });
+    setVal("metodoPago", "Factura x cobrar");
+    $("clienteMatched").style.display = "none"; $("wrapRazonSocial").classList.remove("matched");
+    $("conductorMatched").style.display = "none"; $("wrapConductor").classList.remove("matched");
+    var canvas = $("firmaCanvas"); canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height);
+    firmaDataUrl = null;
+    recomputeTotalGeneral();
+    defaultDateTime();
+  }
+  function guardarManifiesto(){
+    var razonSocial = val("razonSocial").trim();
+    var placa = val("placa").trim().toUpperCase();
+    if (!razonSocial || !placa){
+      showToast("formToastBox", "err", "Falta razón social del generador o placa del vehículo.");
+      return;
+    }
+    setBtnSaving(true);
+
+    previsualizarConsecutivo().then(function(prev){
+      var consecutivo = prev.texto;
+      var cfg = prev.cfg;
+
+      var materiales = MATERIALES.map(function(m){
+        return {
+          key: m.key, cantidad: val("mat_" + m.key + "_cantidad"), um: val("mat_" + m.key + "_um"),
+          empaque: val("mat_" + m.key + "_empaque"), cant: val("mat_" + m.key + "_cant"), total: val("mat_" + m.key + "_total")
+        };
+      });
+      var totalGeneral = materiales.reduce(function(acc, r){ return acc + (parseFloat(r.total) || 0); }, 0);
+      var record = {
+        id: "MAN-" + Date.now() + "-" + Math.random().toString(36).slice(2,6),
+        fecha: val("fecha"), hora: val("hora"), documentoTransporte: val("documentoTransporte"),
+        consecutivo: consecutivo,
+        generador: {
+          razonSocial: razonSocial, nit: val("nit"), idEcoglobal: val("idEcoglobal"), telefono: val("telefono"),
+          direccion: val("direccion"), barrio: val("barrio"), ciudad: val("ciudad"),
+          solicitante: val("solicitante"), cedulaSolicitante: val("cedulaSolicitante"), correo: val("correo")
+        },
+        vehiculo: {
+          tipoVehiculo: val("tipoVehiculo"), placa: placa, conductor: val("conductor"), cedulaConductor: val("cedulaConductor"),
+          auxiliar: val("auxiliar"), cedulaAuxiliar: val("cedulaAuxiliar")
+        },
+        materiales: materiales, totalGeneral: totalGeneral,
+        metodoPago: val("metodoPago"),
+        entrega: { nombre: val("entregaNombre"), cc: val("entregaCC"), cargo: val("entregaCargo") },
+        firmaDataUrl: firmaDataUrl, createdAt: new Date().toISOString(), synced:true, syncedAt: new Date().toISOString()
+      };
+
+      // 1) Intenta guardar el manifiesto y REVISA si realmente se escribió.
+      return storageSet("manifiesto:" + record.id, JSON.stringify(record)).then(function(ok){
+        if (!ok){
+          var detalle = lastSupabaseError ? (" (" + lastSupabaseError + ")") : "";
+          showToast("formToastBox", "err", "No se pudo guardar el manifiesto en la nube" + detalle + ". No se perdió tu información, vuelve a intentar.");
+          return; // no se toca el consecutivo, no se resetea el formulario
+        }
+
+        // 2) Solo AHORA que el manifiesto quedó confirmado, se consume el consecutivo.
+        confirmarConsumoConsecutivo(cfg).then(function(okConsecutivo){
+          if (!okConsecutivo){
+            console.error("El manifiesto se guardó pero no se pudo avanzar el consecutivo:", lastSupabaseError);
+          }
+          renderConsecutivoLabel();
+        });
+
+        // 3) Aprende cliente y conductor nuevos (no bloquea el éxito si esto falla).
+        var yaExisteCliente = clientes.some(function(c){ return c.razonSocial.toLowerCase() === razonSocial.toLowerCase(); });
+        if (!yaExisteCliente && clientes.length < 200){
+          var nuevosClientes = clientes.concat([{
+            razonSocial: razonSocial, nit: record.generador.nit, idEcoglobal: record.generador.idEcoglobal,
+            telefono: record.generador.telefono, direccion: record.generador.direccion, barrio: record.generador.barrio,
+            ciudad: record.generador.ciudad, correo: record.generador.correo
+          }]);
+          storageSet(CLIENTES_KEY, JSON.stringify(nuevosClientes)).then(function(ok2){ if (ok2) clientes = nuevosClientes; });
+        }
+        var nombreConductor = val("conductor").trim();
+        var yaExisteConductor = conductores.some(function(c){ return c.nombre.toLowerCase() === nombreConductor.toLowerCase(); });
+        if (nombreConductor && !yaExisteConductor){
+          var nuevosConductores = conductores.concat([{
+            nombre: nombreConductor, cedula: val("cedulaConductor"), placa: placa,
+            tipoVehiculo: val("tipoVehiculo"), auxiliar: val("auxiliar"), cedulaAuxiliar: val("cedulaAuxiliar")
+          }]);
+          storageSet(CONDUCTORES_KEY, JSON.stringify(nuevosConductores)).then(function(ok3){ if (ok3) conductores = nuevosConductores; });
+        }
+
+        showToast("formToastBox", "ok", "Manifiesto " + consecutivo + " guardado en " + (hasSupabase() ? "Supabase (nube)" : "modo local") + " y asociado a " + razonSocial + ".");
+        resetForm();
+      });
+    }).catch(function(e){
+      console.error(e);
+      showToast("formToastBox", "err", "No se pudo guardar: " + (e && e.message ? e.message : "revisa la conexión e intenta de nuevo."));
+    }).then(function(){
+      setBtnSaving(false);
+    });
+  }
+
+  /* ---------- Directorio de clientes ---------- */
+  function renderClientesList(){
+    $("clientesCount").textContent = clientes.length;
+    $("clientesTabCount").textContent = "(" + clientes.length + ")";
+    var progreso = Math.min(clientes.length, PILOTO_META);
+    $("clientesProgressBar").style.width = ((progreso / PILOTO_META) * 100) + "%";
+    var el = $("listaClientes");
+    if (clientes.length === 0){
+      el.innerHTML = '<div class="empty-box">Directorio vacío. Agrega tus primeras 5 empresas piloto arriba.</div>';
+      return;
+    }
+    el.innerHTML = clientes.map(function(c, i){
+      return (
+        '<div class="list-card">' +
+          '<div class="list-card-main"><span class="dropdown-icon">🏢</span><div>' +
+            '<div class="list-card-title">' + escapeHtml(c.razonSocial) + '</div>' +
+            '<div class="list-card-sub">NIT ' + escapeHtml(c.nit || "—") + " · " + escapeHtml(c.ciudad || "—") + '</div>' +
+          '</div></div>' +
+          '<button type="button" class="btn-icon" data-action="delete-cliente" data-idx="' + i + '">🗑️</button>' +
+        '</div>'
+      );
+    }).join("");
+  }
+  function agregarCliente(){
+    var razonSocial = val("c_razonSocial").trim();
+    if (!razonSocial){ showToast("clienteToastBox", "err", "El nombre de la empresa es obligatorio."); return; }
+    var nuevo = {
+      razonSocial: razonSocial, nit: val("c_nit"), idEcoglobal: val("c_idEcoglobal"), telefono: val("c_telefono"),
+      direccion: val("c_direccion"), barrio: val("c_barrio"), ciudad: val("c_ciudad"), correo: val("c_correo")
+    };
+    var actualizado = clientes.concat([nuevo]);
+    storageSet(CLIENTES_KEY, JSON.stringify(actualizado)).then(function(ok){
+      if (ok){
+        clientes = actualizado;
+        renderClientesList();
+        ["c_razonSocial","c_nit","c_idEcoglobal","c_telefono","c_direccion","c_barrio","c_ciudad","c_correo"].forEach(function(id){ setVal(id, ""); });
+        showToast("clienteToastBox", "ok", "Empresa agregada al directorio.");
+      } else {
+        showToast("clienteToastBox", "err", "No se pudo guardar. Revisa tu conexión e intenta de nuevo.");
+      }
+    });
+  }
+  function eliminarCliente(idx){
+    var actualizado = clientes.filter(function(_, i){ return i !== idx; });
+    storageSet(CLIENTES_KEY, JSON.stringify(actualizado)).then(function(ok){
+      if (ok){ clientes = actualizado; renderClientesList(); }
+    });
+  }
+
+  /* ---------- Directorio de conductores ---------- */
+  function renderConductoresList(){
+    $("conductoresCount").textContent = conductores.length;
+    $("conductoresTabCount").textContent = "(" + conductores.length + ")";
+    var el = $("listaConductores");
+    if (conductores.length === 0){
+      el.innerHTML = '<div class="empty-box">Directorio vacío. Agrega tus conductores arriba, o déjalos que se carguen solos.</div>';
+      return;
+    }
+    el.innerHTML = conductores.map(function(c, i){
+      return (
+        '<div class="list-card">' +
+          '<div class="list-card-main"><span class="dropdown-icon">🚚</span><div>' +
+            '<div class="list-card-title">' + escapeHtml(c.nombre) + '</div>' +
+            '<div class="list-card-sub">Placa ' + escapeHtml(c.placa || "—") + " · " + escapeHtml(c.tipoVehiculo || "—") + '</div>' +
+          '</div></div>' +
+          '<button type="button" class="btn-icon" data-action="delete-conductor" data-idx="' + i + '">🗑️</button>' +
+        '</div>'
+      );
+    }).join("");
+  }
+  function agregarConductor(){
+    var nombre = val("v_nombre").trim();
+    var placa = val("v_placa").trim().toUpperCase();
+    if (!nombre || !placa){ showToast("conductorToastBox", "err", "Nombre y placa son obligatorios."); return; }
+    var nuevo = {
+      nombre: nombre, cedula: val("v_cedula"), placa: placa, tipoVehiculo: val("v_tipoVehiculo"),
+      auxiliar: val("v_auxiliar"), cedulaAuxiliar: val("v_cedulaAuxiliar")
+    };
+    var actualizado = conductores.concat([nuevo]);
+    storageSet(CONDUCTORES_KEY, JSON.stringify(actualizado)).then(function(ok){
+      if (ok){
+        conductores = actualizado;
+        renderConductoresList();
+        ["v_nombre","v_cedula","v_placa","v_tipoVehiculo","v_auxiliar","v_cedulaAuxiliar"].forEach(function(id){ setVal(id, ""); });
+        showToast("conductorToastBox", "ok", "Conductor agregado al directorio.");
+      } else {
+        showToast("conductorToastBox", "err", "No se pudo guardar. Revisa tu conexión e intenta de nuevo.");
+      }
+    });
+  }
+  function eliminarConductor(idx){
+    var actualizado = conductores.filter(function(_, i){ return i !== idx; });
+    storageSet(CONDUCTORES_KEY, JSON.stringify(actualizado)).then(function(ok){
+      if (ok){ conductores = actualizado; renderConductoresList(); }
+    });
+  }
+
+  /* ---------- Panel de trazabilidad ---------- */
+  function loadTrazabilidad(){
+    $("listaTrazabilidad").innerHTML = '<div class="loading-center"><span class="spin">⏳</span></div>';
+    lastSupabaseError = "";
+    storageList("manifiesto:").then(function(keys){
+      var promesas = keys.map(function(k){ return storageGet(k); });
+      return Promise.all(promesas);
+    }).then(function(raws){
+      var records = [];
+      raws.forEach(function(raw){ if (raw){ try { records.push(JSON.parse(raw)); } catch(e){} } });
+      records.sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+      manifiestosCache = records;
+      renderTrazabilidadList();
+      renderConsecutivoLabel();
+    }).catch(function(){
+      manifiestosCache = [];
+      renderTrazabilidadList();
+    });
+  }
+  function renderTrazabilidadList(){
+    var q = val("searchTrazabilidad").toLowerCase();
+    var filtrados = manifiestosCache.filter(function(r){
+      if (!q) return true;
+      return (r.generador.razonSocial || "").toLowerCase().indexOf(q) !== -1 ||
+             (r.vehiculo.placa || "").toLowerCase().indexOf(q) !== -1 ||
+             (r.vehiculo.conductor || "").toLowerCase().indexOf(q) !== -1 ||
+             (r.consecutivo || "").toLowerCase().indexOf(q) !== -1 ||
+             (r.id || "").toLowerCase().indexOf(q) !== -1;
+    });
+    var totalKg = filtrados.reduce(function(acc, r){
+      return acc + r.materiales.reduce(function(a2, m){ return a2 + (parseFloat(m.cantidad) || 0); }, 0);
+    }, 0);
+    var totalPesos = filtrados.reduce(function(acc, r){ return acc + (r.totalGeneral || 0); }, 0);
+    $("kpiManifiestos").textContent = filtrados.length;
+    $("kpiKg").textContent = totalKg.toFixed(1);
+    $("kpiPesos").textContent = "$" + totalPesos.toLocaleString("es-CO");
+
+    var el = $("listaTrazabilidad");
+    if (filtrados.length === 0){
+      if (lastSupabaseError){
+        el.innerHTML = '<div class="empty-box" style="border-color:#C0472B; color:#A1341D;">⚠️ No se pudo leer la nube.<br><span style="font-size:11px;">' + escapeHtml(lastSupabaseError) + '</span></div>';
+      } else {
+        el.innerHTML = '<div class="empty-box">Aún no hay manifiestos sincronizados desde campo.</div>';
+      }
+      return;
+    }
+    el.innerHTML = filtrados.map(function(r){
+      var numMateriales = r.materiales.filter(function(m){ return parseFloat(m.cantidad) > 0; }).length;
+      return (
+        '<button type="button" class="list-card list-card-clickable" data-action="ver-manifiesto" data-id="' + escapeHtml(r.id) + '">' +
+          '<div class="list-card-row"><span class="list-card-title">' + escapeHtml(r.generador.razonSocial || "Sin nombre") + '</span>' +
+          '<span class="badge-sync">SINCRONIZADO</span></div>' +
+          '<div class="list-card-meta">' +
+            '<span class="bold">N° ' + escapeHtml(r.consecutivo || "—") + '</span>' +
+            '<span>' + escapeHtml(r.fecha) + " · " + escapeHtml(r.hora) + '</span>' +
+            '<span>Placa ' + escapeHtml(r.vehiculo.placa || "—") + '</span>' +
+            '<span>' + numMateriales + ' materiales</span>' +
+            '<span class="green-bold">$' + (r.totalGeneral || 0).toLocaleString("es-CO") + '</span>' +
+          '</div>' +
+        '</button>'
+      );
+    }).join("");
+  }
+  function abrirModalDetalle(id){
+    var r = manifiestosCache.filter(function(x){ return x.id === id; })[0];
+    if (!r) return;
+    var materialesHtml = r.materiales.filter(function(m){ return parseFloat(m.cantidad) > 0 || parseFloat(m.total) > 0; }).map(function(m){
+      var info = MATERIALES.filter(function(x){ return x.key === m.key; })[0];
+      return (
+        '<div class="modal-material-row"><span class="flex-center"><span class="dot" style="background:' + info.color + '"></span>' + escapeHtml(info.label) + '</span>' +
+        '<span>' + escapeHtml(m.cantidad) + " " + escapeHtml(m.um) + " · $" + escapeHtml(m.total || "0") + '</span></div>'
+      );
+    }).join("");
+    var firmaHtml = r.firmaDataUrl ? (
+      '<div class="modal-section"><h4>Firma</h4><img src="' + r.firmaDataUrl + '" class="firma-img" alt="firma">' +
+      '<p class="muted">' + escapeHtml(r.entrega.nombre) + " — CC " + escapeHtml(r.entrega.cc) + " — " + escapeHtml(r.entrega.cargo) + '</p></div>'
+    ) : "";
+    var modal = document.createElement("div");
+    modal.className = "modal-overlay";
+    modal.innerHTML =
+      '<div class="modal-sheet">' +
+        '<div class="modal-header"><div><span class="modal-eyebrow">N° ' + escapeHtml(r.consecutivo || "—") + '</span>' +
+        '<h3>' + escapeHtml(r.generador.razonSocial) + '</h3></div>' +
+        '<button type="button" class="btn-icon" data-action="close-modal">✖️</button></div>' +
+        '<div class="modal-body">' +
+          '<p><b>Fecha:</b> ' + escapeHtml(r.fecha) + " " + escapeHtml(r.hora) + '</p>' +
+          '<p><b>NIT:</b> ' + escapeHtml(r.generador.nit) + ' · <b>ID Ecoglobal:</b> ' + escapeHtml(r.generador.idEcoglobal) + '</p>' +
+          '<p><b>Dirección:</b> ' + escapeHtml(r.generador.direccion) + ", " + escapeHtml(r.generador.barrio) + " — " + escapeHtml(r.generador.ciudad) + '</p>' +
+          '<p><b>Vehículo:</b> ' + escapeHtml(r.vehiculo.tipoVehiculo) + ' · Placa ' + escapeHtml(r.vehiculo.placa) + '</p>' +
+          '<p><b>Conductor:</b> ' + escapeHtml(r.vehiculo.conductor) + " — " + escapeHtml(r.vehiculo.cedulaConductor) + '</p>' +
+          '<div class="modal-section"><h4>Materiales</h4>' + materialesHtml + '</div>' +
+          firmaHtml +
+        '</div>' +
+      '</div>';
+    modal.addEventListener("click", function(e){
+      if (e.target === modal || (e.target.closest && e.target.closest('[data-action="close-modal"]'))) modal.remove();
+    });
+    document.body.appendChild(modal);
+  }
+
+  /* ---------- Inicialización y listeners ---------- */
+  function attachEventListeners(){
+    $("btnCloudStatus").addEventListener("click", openCloudModal);
+    $("btnResembrarClientes").addEventListener("click", resembrarClientes);
+    $("btnResembrarConductores").addEventListener("click", resembrarConductores);
+
+    document.querySelectorAll(".tab-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){ switchTab(btn.getAttribute("data-tab")); });
+    });
+
+    $("razonSocial").addEventListener("input", function(){
+      $("clienteMatched").style.display = "none"; $("wrapRazonSocial").classList.remove("matched");
+      renderClienteDropdown();
+    });
+    $("razonSocial").addEventListener("focus", renderClienteDropdown);
+    $("clienteDropdown").addEventListener("click", function(e){
+      var btn = e.target.closest && e.target.closest(".dropdown-item");
+      if (!btn) return;
+      seleccionarCliente(parseInt(btn.getAttribute("data-idx"), 10));
+    });
+
+    $("conductor").addEventListener("input", function(){
+      $("conductorMatched").style.display = "none"; $("wrapConductor").classList.remove("matched");
+      renderConductorDropdown();
+    });
+    $("conductor").addEventListener("focus", renderConductorDropdown);
+    $("conductorDropdown").addEventListener("click", function(e){
+      var btn = e.target.closest && e.target.closest(".dropdown-item");
+      if (!btn) return;
+      seleccionarConductor(parseInt(btn.getAttribute("data-idx"), 10));
+    });
+
+    document.addEventListener("click", function(e){
+      if (!e.target.closest || !e.target.closest("#wrapRazonSocial")) { $("clienteDropdown").style.display = "none"; }
+      if (!e.target.closest || !e.target.closest("#wrapConductor")) { $("conductorDropdown").style.display = "none"; }
+    });
+
+    $("materialesContainer").addEventListener("input", function(e){
+      if (e.target.id && e.target.id.indexOf("_total") === e.target.id.length - 6){
+        var key = e.target.id.replace("mat_", "").replace("_total", "");
+        $("mat_" + key + "_totaldisplay").textContent = e.target.value ? ("$" + e.target.value) : "";
+      }
+      recomputeTotalGeneral();
+    });
+
+    $("btnGuardar").addEventListener("click", guardarManifiesto);
+
+    $("btnAddCliente").addEventListener("click", agregarCliente);
+    $("listaClientes").addEventListener("click", function(e){
+      var btn = e.target.closest && e.target.closest('[data-action="delete-cliente"]');
+      if (!btn) return;
+      eliminarCliente(parseInt(btn.getAttribute("data-idx"), 10));
+    });
+
+    $("btnAddConductor").addEventListener("click", agregarConductor);
+    $("listaConductores").addEventListener("click", function(e){
+      var btn = e.target.closest && e.target.closest('[data-action="delete-conductor"]');
+      if (!btn) return;
+      eliminarConductor(parseInt(btn.getAttribute("data-idx"), 10));
+    });
+
+    $("searchTrazabilidad").addEventListener("input", renderTrazabilidadList);
+    $("btnReloadTrazabilidad").addEventListener("click", loadTrazabilidad);
+    $("listaTrazabilidad").addEventListener("click", function(e){
+      var btn = e.target.closest && e.target.closest('[data-action="ver-manifiesto"]');
+      if (!btn) return;
+      abrirModalDetalle(btn.getAttribute("data-id"));
+    });
+
+    $("btnToggleConsecutivo").addEventListener("click", function(){
+      var box = $("consecutivoForm");
+      box.style.display = (box.style.display === "flex") ? "none" : "flex";
+    });
+    $("btnGuardarConsecutivo").addEventListener("click", function(){
+      var cfg = { prefijo: val("cfgPrefijo") || "R", siguiente: parseInt(val("cfgSiguiente"), 10) || 0 };
+      saveConsecutivoConfig(cfg).then(function(){
+        $("consecutivoForm").style.display = "none";
+        renderConsecutivoLabel();
+      });
+    });
+  }
+
+  function init(){
+    buildMaterialesForm();
+    defaultDateTime();
+    initSignaturePad();
+    attachEventListeners();
+    updateCloudBadge();
+
+    reloadAllFromCloud();
+
+    recomputeTotalGeneral();
+    renderConsecutivoLabel();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
