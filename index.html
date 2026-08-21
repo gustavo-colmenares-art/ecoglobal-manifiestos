@@ -315,6 +315,9 @@
       <button class="btn-mini" id="btnGuardarConsecutivo">Guardar</button>
     </div>
 
+    <button type="button" class="btn-mini" id="btnVaciarTrazabilidad" style="background:#C0472B; margin-bottom:12px;">🗑️ Vaciar trazabilidad (borra todos los manifiestos)</button>
+    <div id="trazabilidadToast"></div>
+
     <div class="kpis">
       <div class="kpi"><div class="kpi-label">Manifiestos</div><div class="kpi-value" id="kpiManifiestos">0</div></div>
       <div class="kpi"><div class="kpi-label">Kg totales</div><div class="kpi-value" id="kpiKg">0</div></div>
@@ -335,8 +338,11 @@
     <div class="banner">
       <div class="banner-top"><span class="banner-label">Directorio de empresas</span><span class="banner-count"><span id="clientesCount">0</span> / 200 empresas</span></div>
       <div class="progress-track"><div class="progress-fill" id="clientesProgressBar" style="width:0%"></div></div>
-      <div class="banner-note">160 empresas cargadas desde la BASE MAESTRA (filtradas: solo negocios formales, sin microgeneradores). Se sigue completando hasta las ~200 del mercado objetivo a medida que se registran manifiestos nuevos.</div>
-      <button type="button" class="btn-mini" id="btnResembrarClientes" style="margin-top:10px;">🔄 Recargar empresas de la BASE MAESTRA</button>
+      <div class="banner-note">Carga aquí tus clientes reales. Antes usamos datos de prueba de la BASE MAESTRA — puedes vaciarlos con el botón rojo antes de empezar.</div>
+      <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+        <button type="button" class="btn-mini" id="btnResembrarClientes">🔄 Recargar empresas de la BASE MAESTRA</button>
+        <button type="button" class="btn-mini" id="btnVaciarClientes" style="background:#C0472B;">🗑️ Vaciar directorio completo</button>
+      </div>
       <div id="resembrarClientesToast"></div>
     </div>
 
@@ -757,6 +763,24 @@
         return [];
       });
   }
+  function supabaseDelete(key){
+    var cfg = getSupabaseConfig();
+    var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage?key=eq." + encodeURIComponent(key);
+    return fetch(url, { method: "DELETE", headers: supabaseHeaders(cfg) })
+      .then(function(r){
+        if (r.ok) { lastSupabaseError = ""; return true; }
+        return r.text().then(function(txt){
+          lastSupabaseError = "HTTP " + r.status + " al borrar: " + txt;
+          console.error("Supabase DELETE error:", lastSupabaseError);
+          return false;
+        });
+      })
+      .catch(function(e){
+        lastSupabaseError = "Error de red al borrar en Supabase: " + (e && e.message ? e.message : e);
+        console.error(lastSupabaseError, e);
+        return false;
+      });
+  }
   function testSupabaseConnection(cfg){
     var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage?select=key&limit=1";
     return fetch(url, { headers: supabaseHeaders(cfg) }).then(function(r){ return r.ok; }).catch(function(){ return false; });
@@ -794,6 +818,14 @@
       }
     } catch(e){}
     return Promise.resolve(keys);
+  }
+  function storageDelete(key){
+    if (hasSupabase()) return supabaseDelete(key);
+    if (hasCloudStorage()){
+      return window.storage.delete(key, true).then(function(r){ return !!r; }).catch(function(){ return false; });
+    }
+    try { localStorage.removeItem(key); return Promise.resolve(true); }
+    catch(e){ return Promise.resolve(false); }
   }
 
   /* ---------- Panel de conexión a la nube ---------- */
@@ -861,25 +893,48 @@
       });
     }
   }
+  var SEED_FLAG_KEY = "config:seed_inicial_hecho"; // evita que se vuelvan a sembrar solos una vez que el admin los vacía
+
   function reloadAllFromCloud(){
-    loadClientes().then(function(lista){
-      if (lista.length === 0){
-        return storageSet(CLIENTES_KEY, JSON.stringify(SEED_CLIENTES)).then(function(){ return SEED_CLIENTES.slice(); });
-      }
-      return lista;
-    }).then(function(lista){
-      clientes = lista; renderClientesList();
-      return loadConductores();
-    }).then(function(lista){
-      if (lista.length === 0){
-        return storageSet(CONDUCTORES_KEY, JSON.stringify(SEED_CONDUCTORES)).then(function(){ return SEED_CONDUCTORES.slice(); });
-      }
-      return lista;
-    }).then(function(lista){
-      conductores = lista; renderConductoresList();
+    return storageGet(SEED_FLAG_KEY).then(function(flag){
+      var yaSembrado = flag === "true";
+      return loadClientes().then(function(lista){
+        if (lista.length === 0 && !yaSembrado){
+          return storageSet(CLIENTES_KEY, JSON.stringify(SEED_CLIENTES)).then(function(){ return SEED_CLIENTES.slice(); });
+        }
+        return lista;
+      }).then(function(lista){
+        clientes = lista; renderClientesList();
+        return loadConductores();
+      }).then(function(lista){
+        if (lista.length === 0 && !yaSembrado){
+          return storageSet(CONDUCTORES_KEY, JSON.stringify(SEED_CONDUCTORES)).then(function(){ return SEED_CONDUCTORES.slice(); });
+        }
+        return lista;
+      }).then(function(lista){
+        conductores = lista; renderConductoresList();
+        if (!yaSembrado) return storageSet(SEED_FLAG_KEY, "true");
+      });
     });
   }
 
+  /* Vaciar el directorio de clientes por completo (protegido por PIN).
+     Con SEED_FLAG_KEY ya marcado, no se vuelve a sembrar solo después. */
+  function vaciarDirectorioClientes(){
+    pedirPinAdmin(function(){
+      storageSet(SEED_FLAG_KEY, "true").then(function(){
+        return storageSet(CLIENTES_KEY, "[]");
+      }).then(function(ok){
+        if (ok){
+          clientes = [];
+          renderClientesList();
+          showToast("listaClientesToastBox", "ok", "Directorio de clientes vaciado. Listo para cargar clientes reales.");
+        } else {
+          showToast("listaClientesToastBox", "err", "No se pudo vaciar. Revisa tu conexión e intenta de nuevo.");
+        }
+      });
+    });
+  }
   /* ---------- Resiembra manual (con feedback visible) ---------- */
   function resembrarClientes(){
     pedirPinAdmin(function(){
@@ -1501,6 +1556,40 @@
   }
 
   /* ---------- Panel de trazabilidad ---------- */
+  /* ---------- Vaciar toda la trazabilidad (irreversible, protegido con PIN) ---------- */
+  function vaciarTrazabilidad(){
+    pedirPinAdmin(function(){
+      var confirmado = window.confirm(
+        "Esto borra TODOS los manifiestos guardados de forma permanente y reinicia el consecutivo a R 08148. " +
+        "No se puede deshacer. ¿Confirmas que quieres continuar?"
+      );
+      if (!confirmado) return;
+
+      var btn = $("btnVaciarTrazabilidad");
+      btn.disabled = true; btn.textContent = "⏳ Borrando...";
+
+      storageList("manifiesto:").then(function(keys){
+        var borrados = keys.map(function(k){ return storageDelete(k); });
+        return Promise.all(borrados);
+      }).then(function(resultados){
+        var fallos = resultados.filter(function(ok){ return !ok; }).length;
+        return saveConsecutivoConfig({ prefijo: "R", siguiente: 8148 }).then(function(){
+          return fallos;
+        });
+      }).then(function(fallos){
+        btn.disabled = false; btn.textContent = "🗑️ Vaciar trazabilidad (borra todos los manifiestos)";
+        manifiestosCache = [];
+        renderTrazabilidadList();
+        renderConsecutivoLabel();
+        if (fallos === 0){
+          showToast("trazabilidadToast", "ok", "Trazabilidad vaciada. El consecutivo volvió a R 08148.");
+        } else {
+          showToast("trazabilidadToast", "err", fallos + " manifiesto(s) no se pudieron borrar. Revisa tu conexión e inténtalo de nuevo.");
+        }
+      });
+    });
+  }
+
   function loadTrazabilidad(){
     $("listaTrazabilidad").innerHTML = '<div class="loading-center"><span class="spin">⏳</span></div>';
     lastSupabaseError = "";
@@ -1722,6 +1811,8 @@
   function attachEventListeners(){
     $("btnCloudStatus").addEventListener("click", openCloudModal);
     $("btnResembrarClientes").addEventListener("click", resembrarClientes);
+    $("btnVaciarClientes").addEventListener("click", vaciarDirectorioClientes);
+    $("btnVaciarTrazabilidad").addEventListener("click", vaciarTrazabilidad);
     $("btnResembrarConductores").addEventListener("click", resembrarConductores);
     $("btnCancelarEdicion").addEventListener("click", function(){
       salirModoEdicion();
