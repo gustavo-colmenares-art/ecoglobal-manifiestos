@@ -86,6 +86,13 @@
   .material-total{ font-size:12px; font-weight:600; color:var(--verde); }
   .tag{ border-radius:999px; padding:2px 8px; font-size:9px; font-weight:700; text-transform:uppercase; color:#fff; }
   .material-fields{ display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; border-top:1px solid var(--borde); }
+  .subitems-container{ padding:0 12px; }
+  .subitem-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px 0; border-top:1px solid var(--borde); }
+  .subitem-row:first-child{ border-top:none; padding-top:12px; }
+  .subitem-row label{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; color:var(--gris); }
+  .subitem-row input{ margin-top:4px; width:100%; border:1px solid var(--borde2); border-radius:6px; padding:8px 10px; }
+  .btn-quitar-subitem{ grid-column:1 / -1; justify-self:start; font-size:11px; font-weight:600; color:#C0472B; padding:4px 0; }
+  .btn-agregar-subitem{ display:block; width:calc(100% - 24px); margin:8px 12px 12px; background:#F1F3EC; color:var(--verde); border:1px dashed var(--verde); border-radius:8px; padding:9px; font-size:12px; font-weight:700; }
   .material-fields label{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; color:var(--gris); }
   .material-fields input{ margin-top:4px; width:100%; border:1px solid var(--borde2); border-radius:6px; padding:8px 10px; }
   .material-fields .span2{ grid-column:1 / -1; }
@@ -430,6 +437,7 @@
     { key:"madera", label:"Madera", tag:"APROV.", color:"#8B6A3F" },
     { key:"aprovechables", label:"Aprovechables", tag:"APROV.", color:"#BCCF00" },
     { key:"epps", label:"EPPS", tag:"OTRO", color:"#4F7DBE" },
+    { key:"raee", label:"RAEE (aparatos eléctricos y electrónicos)", tag:"NO RESPEL", color:"#2E86AB" },
     { key:"otros", label:"Otros (tarros, transporte...)", tag:"OTRO", color:"#8A8F86" }
   ];
 
@@ -1044,10 +1052,29 @@
   }
 
   /* ---------- Materiales: construcción del formulario ---------- */
+  function crearFilaSubitem(key){
+    var row = document.createElement("div");
+    row.className = "subitem-row";
+    row.setAttribute("data-key", key);
+    row.innerHTML =
+      '<label class="span2">Descripción / tipo específico<input type="text" data-field="descripcion" placeholder="Ej: pilas, luminarias, guantes..."></label>' +
+      '<label>Cantidad<input type="number" data-field="cantidad"></label>' +
+      '<label>UM<input type="text" data-field="um" value="KG"></label>' +
+      '<label>Empaque<input type="text" data-field="empaque"></label>' +
+      '<label>Cant. empaque<input type="number" data-field="cant"></label>' +
+      '<label class="span2">Total ($)<input type="number" data-field="total"></label>' +
+      '<button type="button" class="btn-quitar-subitem" title="Quitar este residuo">🗑️ Quitar</button>';
+    return row;
+  }
+  function agregarSubitem(key, contenedor){
+    var cont = contenedor || $("subitems_" + key);
+    cont.appendChild(crearFilaSubitem(key));
+    recomputeTotalGeneral();
+  }
   function buildMaterialesForm(){
     var html = MATERIALES.map(function(mat){
       return (
-        '<details class="material-item">' +
+        '<details class="material-item" open>' +
           '<summary>' +
             '<span class="material-label"><span class="dot" style="background:' + mat.color + '"></span>' + escapeHtml(mat.label) + '</span>' +
             '<span class="material-right">' +
@@ -1055,22 +1082,58 @@
               '<span class="tag" style="background:' + mat.color + '">' + mat.tag + '</span>' +
             '</span>' +
           '</summary>' +
-          '<div class="material-fields">' +
-            '<label>Cantidad<input type="number" id="mat_' + mat.key + '_cantidad"></label>' +
-            '<label>UM<input type="text" id="mat_' + mat.key + '_um" value="KG"></label>' +
-            '<label>Empaque<input type="text" id="mat_' + mat.key + '_empaque"></label>' +
-            '<label>Cant. empaque<input type="number" id="mat_' + mat.key + '_cant"></label>' +
-            '<label class="span2">Total ($)<input type="number" id="mat_' + mat.key + '_total"></label>' +
-          '</div>' +
+          '<div class="subitems-container" id="subitems_' + mat.key + '"></div>' +
+          '<button type="button" class="btn-agregar-subitem" data-key="' + mat.key + '">➕ Agregar otro residuo de este tipo</button>' +
         '</details>'
       );
     }).join("");
     $("materialesContainer").innerHTML = html;
+    // Arranca cada categoría con una sola fila en blanco
+    MATERIALES.forEach(function(mat){
+      agregarSubitem(mat.key, $("subitems_" + mat.key));
+    });
   }
   function recomputeTotalGeneral(){
     var total = 0;
-    MATERIALES.forEach(function(m){ total += parseFloat(val("mat_" + m.key + "_total")) || 0; });
+    // Total general: suma de TODOS los campos "total" de TODAS las categorías/filas
+    document.querySelectorAll('#materialesContainer [data-field="total"]').forEach(function(input){
+      total += parseFloat(input.value) || 0;
+    });
     $("totalGeneralDisplay").textContent = "$" + total.toLocaleString("es-CO");
+    // Actualiza el resumen ($) que se ve junto al nombre de cada categoría al cerrar el desplegable
+    MATERIALES.forEach(function(mat){
+      var subtotal = 0;
+      var cont = $("subitems_" + mat.key);
+      if (cont) {
+        cont.querySelectorAll('[data-field="total"]').forEach(function(input){
+          subtotal += parseFloat(input.value) || 0;
+        });
+      }
+      var disp = $("mat_" + mat.key + "_totaldisplay");
+      if (disp) disp.textContent = subtotal > 0 ? ("$" + subtotal.toLocaleString("es-CO")) : "";
+    });
+  }
+  /* Recolecta todas las filas de residuos realmente diligenciadas en el formulario,
+     de todas las categorías, para guardarlas en el manifiesto. */
+  function leerMaterialesDelFormulario(){
+    var resultado = [];
+    document.querySelectorAll('#materialesContainer .subitem-row').forEach(function(row){
+      var key = row.getAttribute("data-key");
+      var get = function(campo){
+        var el = row.querySelector('[data-field="' + campo + '"]');
+        return el ? el.value : "";
+      };
+      resultado.push({
+        key: key,
+        descripcion: get("descripcion"),
+        cantidad: get("cantidad"),
+        um: get("um"),
+        empaque: get("empaque"),
+        cant: get("cant"),
+        total: get("total")
+      });
+    });
+    return resultado;
   }
 
   /* ---------- Autocompletar: clientes ---------- */
@@ -1258,9 +1321,11 @@
      "solicitante","cedulaSolicitante","correo","conductor","cedulaConductor","placa","tipoVehiculo",
      "auxiliar","cedulaAuxiliar","entregaNombre","entregaCC","entregaCargo"].forEach(function(id){ setVal(id, ""); });
     MATERIALES.forEach(function(m){
-      setVal("mat_" + m.key + "_cantidad", ""); setVal("mat_" + m.key + "_um", "KG");
-      setVal("mat_" + m.key + "_empaque", ""); setVal("mat_" + m.key + "_cant", "");
-      setVal("mat_" + m.key + "_total", ""); $("mat_" + m.key + "_totaldisplay").textContent = "";
+      var cont = $("subitems_" + m.key);
+      cont.innerHTML = "";
+      agregarSubitem(m.key, cont);
+      var disp = $("mat_" + m.key + "_totaldisplay");
+      if (disp) disp.textContent = "";
     });
     setVal("metodoPago", "Factura x cobrar");
     $("clienteMatched").style.display = "none"; $("wrapRazonSocial").classList.remove("matched");
@@ -1290,12 +1355,7 @@
       var consecutivo = prev.texto;
       var cfg = prev.cfg;
 
-      var materiales = MATERIALES.map(function(m){
-        return {
-          key: m.key, cantidad: val("mat_" + m.key + "_cantidad"), um: val("mat_" + m.key + "_um"),
-          empaque: val("mat_" + m.key + "_empaque"), cant: val("mat_" + m.key + "_cant"), total: val("mat_" + m.key + "_total")
-        };
-      });
+      var materiales = leerMaterialesDelFormulario();
       var totalGeneral = materiales.reduce(function(acc, r){ return acc + (parseFloat(r.total) || 0); }, 0);
       var record = {
         id: esEdicion ? editingManifiestoId : ("MAN-" + Date.now() + "-" + Math.random().toString(36).slice(2,6)),
@@ -1387,14 +1447,27 @@
     setVal("placa", r.vehiculo.placa); setVal("tipoVehiculo", r.vehiculo.tipoVehiculo);
     setVal("auxiliar", r.vehiculo.auxiliar); setVal("cedulaAuxiliar", r.vehiculo.cedulaAuxiliar);
 
+    // Reconstruye las filas de residuos según lo que tenga guardado el manifiesto
+    // (uno o varios por categoría). Si una categoría no tiene ninguno guardado,
+    // se deja con una fila en blanco para poder agregar si hace falta.
     MATERIALES.forEach(function(m){
-      var row = r.materiales.filter(function(x){ return x.key === m.key; })[0] || {};
-      setVal("mat_" + m.key + "_cantidad", row.cantidad || "");
-      setVal("mat_" + m.key + "_um", row.um || "KG");
-      setVal("mat_" + m.key + "_empaque", row.empaque || "");
-      setVal("mat_" + m.key + "_cant", row.cant || "");
-      setVal("mat_" + m.key + "_total", row.total || "");
-      $("mat_" + m.key + "_totaldisplay").textContent = row.total ? ("$" + row.total) : "";
+      var cont = $("subitems_" + m.key);
+      cont.innerHTML = "";
+      var filasGuardadas = r.materiales.filter(function(x){ return x.key === m.key; });
+      if (filasGuardadas.length === 0){
+        agregarSubitem(m.key, cont);
+      } else {
+        filasGuardadas.forEach(function(datos){
+          var fila = crearFilaSubitem(m.key);
+          fila.querySelector('[data-field="descripcion"]').value = datos.descripcion || "";
+          fila.querySelector('[data-field="cantidad"]').value = datos.cantidad || "";
+          fila.querySelector('[data-field="um"]').value = datos.um || "KG";
+          fila.querySelector('[data-field="empaque"]').value = datos.empaque || "";
+          fila.querySelector('[data-field="cant"]').value = datos.cant || "";
+          fila.querySelector('[data-field="total"]').value = datos.total || "";
+          cont.appendChild(fila);
+        });
+      }
     });
     recomputeTotalGeneral();
 
@@ -1656,9 +1729,10 @@
     var r = manifiestosCache.filter(function(x){ return x.id === id; })[0];
     if (!r) return;
     var materialesHtml = r.materiales.filter(function(m){ return parseFloat(m.cantidad) > 0 || parseFloat(m.total) > 0; }).map(function(m){
-      var info = MATERIALES.filter(function(x){ return x.key === m.key; })[0];
+      var info = MATERIALES.filter(function(x){ return x.key === m.key; })[0] || { label: m.key, color: "#8A8F86" };
+      var etiqueta = escapeHtml(info.label) + (m.descripcion ? (" — " + escapeHtml(m.descripcion)) : "");
       return (
-        '<div class="modal-material-row"><span class="flex-center"><span class="dot" style="background:' + info.color + '"></span>' + escapeHtml(info.label) + '</span>' +
+        '<div class="modal-material-row"><span class="flex-center"><span class="dot" style="background:' + info.color + '"></span>' + etiqueta + '</span>' +
         '<span>' + escapeHtml(m.cantidad) + " " + escapeHtml(m.um) + " · $" + escapeHtml(m.total || "0") + '</span></div>'
       );
     }).join("");
@@ -1724,8 +1798,9 @@
     r.materiales.forEach(function(m){
       if (parseFloat(m.cantidad) > 0 || parseFloat(m.total) > 0){
         hayMateriales = true;
-        var info = MATERIALES.filter(function(x){ return x.key === m.key; })[0];
-        lineas.push("• " + info.label + ": " + (m.cantidad || "0") + " " + (m.um || "") + " ($" + (m.total || "0") + ")");
+        var info = MATERIALES.filter(function(x){ return x.key === m.key; })[0] || { label: m.key };
+        var etiqueta = info.label + (m.descripcion ? (" — " + m.descripcion) : "");
+        lineas.push("• " + etiqueta + ": " + (m.cantidad || "0") + " " + (m.um || "") + " ($" + (m.total || "0") + ")");
       }
     });
     if (!hayMateriales) lineas.push("(sin materiales registrados)");
@@ -1762,8 +1837,9 @@
   }
   function imprimirManifiesto(r){
     var materialesFilas = r.materiales.filter(function(m){ return parseFloat(m.cantidad) > 0 || parseFloat(m.total) > 0; }).map(function(m){
-      var info = MATERIALES.filter(function(x){ return x.key === m.key; })[0];
-      return "<tr><td>" + escapeHtml(info.label) + "</td><td>" + escapeHtml(m.cantidad || "0") + " " + escapeHtml(m.um || "") + "</td><td>$" + escapeHtml(m.total || "0") + "</td></tr>";
+      var info = MATERIALES.filter(function(x){ return x.key === m.key; })[0] || { label: m.key };
+      var etiqueta = escapeHtml(info.label) + (m.descripcion ? (" — " + escapeHtml(m.descripcion)) : "");
+      return "<tr><td>" + etiqueta + "</td><td>" + escapeHtml(m.cantidad || "0") + " " + escapeHtml(m.um || "") + "</td><td>$" + escapeHtml(m.total || "0") + "</td></tr>";
     }).join("");
     var firmaImg = r.firmaDataUrl ? ('<p><b>Firma:</b><br><img src="' + r.firmaDataUrl + '" style="height:90px;border:1px solid #ccc;border-radius:6px;"></p>') : "";
     var tituloArchivo = nombreArchivoManifiesto(r);
@@ -1851,11 +1927,23 @@
     });
 
     $("materialesContainer").addEventListener("input", function(e){
-      if (e.target.id && e.target.id.indexOf("_total") === e.target.id.length - 6){
-        var key = e.target.id.replace("mat_", "").replace("_total", "");
-        $("mat_" + key + "_totaldisplay").textContent = e.target.value ? ("$" + e.target.value) : "";
+      if (e.target.getAttribute("data-field") === "total"){
+        recomputeTotalGeneral();
       }
-      recomputeTotalGeneral();
+    });
+    $("materialesContainer").addEventListener("click", function(e){
+      var btnAgregar = e.target.closest && e.target.closest(".btn-agregar-subitem");
+      if (btnAgregar){
+        agregarSubitem(btnAgregar.getAttribute("data-key"));
+        return;
+      }
+      var btnQuitar = e.target.closest && e.target.closest(".btn-quitar-subitem");
+      if (btnQuitar){
+        var fila = btnQuitar.closest(".subitem-row");
+        if (fila) fila.remove();
+        recomputeTotalGeneral();
+        return;
+      }
     });
 
     $("btnGuardar").addEventListener("click", guardarManifiesto);
