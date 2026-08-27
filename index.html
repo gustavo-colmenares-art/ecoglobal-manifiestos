@@ -713,10 +713,20 @@
 
   var lastSupabaseError = ""; // último error real de Supabase, para mostrarlo en vez de fallar en silencio
 
+  /* fetch con límite de tiempo: si Supabase no responde en 20s, se cancela
+     y se reporta como error en vez de dejar la operación colgada en silencio. */
+  function fetchConTimeout(url, opciones, timeoutMs){
+    timeoutMs = timeoutMs || 20000;
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, timeoutMs);
+    var opcionesFinal = Object.assign({}, opciones, { signal: controller.signal });
+    return fetch(url, opcionesFinal).finally(function(){ clearTimeout(timer); });
+  }
+
   function supabaseGet(key){
     var cfg = getSupabaseConfig();
     var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage?key=eq." + encodeURIComponent(key) + "&select=value";
-    return fetch(url, { headers: supabaseHeaders(cfg) })
+    return fetchConTimeout(url, { headers: supabaseHeaders(cfg) })
       .then(function(r){
         if (r.ok) { lastSupabaseError = ""; return r.json(); }
         return r.text().then(function(txt){
@@ -727,7 +737,9 @@
       })
       .then(function(rows){ return (rows && rows[0]) ? rows[0].value : null; })
       .catch(function(e){
-        lastSupabaseError = "Error de red al leer de Supabase: " + (e && e.message ? e.message : e);
+        lastSupabaseError = (e && e.name === "AbortError")
+          ? "Tiempo de espera agotado al leer de Supabase (20s)."
+          : "Error de red al leer de Supabase: " + (e && e.message ? e.message : e);
         console.error(lastSupabaseError, e);
         return null;
       });
@@ -735,7 +747,7 @@
   function supabaseSet(key, value){
     var cfg = getSupabaseConfig();
     var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage";
-    return fetch(url, {
+    return fetchConTimeout(url, {
       method: "POST",
       headers: supabaseHeaders(cfg, { "Prefer": "resolution=merge-duplicates" }),
       body: JSON.stringify({ key: key, value: value })
@@ -747,7 +759,9 @@
         return false;
       });
     }).catch(function(e){
-      lastSupabaseError = "Error de red al guardar en Supabase: " + (e && e.message ? e.message : e);
+      lastSupabaseError = (e && e.name === "AbortError")
+        ? "Tiempo de espera agotado al guardar en Supabase (20s). Revisa tu conexión."
+        : "Error de red al guardar en Supabase: " + (e && e.message ? e.message : e);
       console.error(lastSupabaseError, e);
       return false;
     });
@@ -755,7 +769,7 @@
   function supabaseList(prefix){
     var cfg = getSupabaseConfig();
     var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage?key=like." + encodeURIComponent(prefix + "*") + "&select=key";
-    return fetch(url, { headers: supabaseHeaders(cfg) })
+    return fetchConTimeout(url, { headers: supabaseHeaders(cfg) })
       .then(function(r){
         if (r.ok) { lastSupabaseError = ""; return r.json(); }
         return r.text().then(function(txt){
@@ -766,7 +780,9 @@
       })
       .then(function(rows){ return rows.map(function(r){ return r.key; }); })
       .catch(function(e){
-        lastSupabaseError = "Error de red al listar de Supabase: " + (e && e.message ? e.message : e);
+        lastSupabaseError = (e && e.name === "AbortError")
+          ? "Tiempo de espera agotado al listar en Supabase (20s)."
+          : "Error de red al listar de Supabase: " + (e && e.message ? e.message : e);
         console.error(lastSupabaseError, e);
         return [];
       });
@@ -774,7 +790,7 @@
   function supabaseDelete(key){
     var cfg = getSupabaseConfig();
     var url = supabaseBaseUrl(cfg) + "/rest/v1/app_storage?key=eq." + encodeURIComponent(key);
-    return fetch(url, { method: "DELETE", headers: supabaseHeaders(cfg) })
+    return fetchConTimeout(url, { method: "DELETE", headers: supabaseHeaders(cfg) })
       .then(function(r){
         if (r.ok) { lastSupabaseError = ""; return true; }
         return r.text().then(function(txt){
@@ -784,7 +800,9 @@
         });
       })
       .catch(function(e){
-        lastSupabaseError = "Error de red al borrar en Supabase: " + (e && e.message ? e.message : e);
+        lastSupabaseError = (e && e.name === "AbortError")
+          ? "Tiempo de espera agotado al borrar en Supabase (20s)."
+          : "Error de red al borrar en Supabase: " + (e && e.message ? e.message : e);
         console.error(lastSupabaseError, e);
         return false;
       });
@@ -1336,6 +1354,9 @@
     defaultDateTime();
   }
   function guardarManifiesto(){
+    if ($("btnGuardar").disabled){
+      return; // ya hay un guardado en curso — evita el doble envío que "pisa" el mensaje
+    }
     var razonSocial = val("razonSocial").trim();
     var placa = val("placa").trim().toUpperCase();
     if (!razonSocial || !placa){
@@ -1345,6 +1366,7 @@
     setBtnSaving(true);
 
     var esEdicion = !!editingManifiestoId;
+    var seMostroMensaje = false; // seguro: garantiza que siempre se vea un aviso al terminar
 
     // Si estamos editando, no se toca el consecutivo — se reutiliza el mismo.
     var prevPromise = esEdicion
@@ -1378,11 +1400,13 @@
         editedAt: esEdicion ? new Date().toISOString() : null,
         synced:true, syncedAt: new Date().toISOString()
       };
+      console.log("Guardando manifiesto — " + materiales.length + " residuo(s) registrados, tamaño del registro: " + JSON.stringify(record).length + " caracteres.");
 
       // 1) Intenta guardar el manifiesto y REVISA si realmente se escribió.
       return storageSet("manifiesto:" + record.id, JSON.stringify(record)).then(function(ok){
         if (!ok){
           var detalle = lastSupabaseError ? (" (" + lastSupabaseError + ")") : "";
+          seMostroMensaje = true;
           showToast("formToastBox", "err", "No se pudo guardar el manifiesto en la nube" + detalle + ". No se perdió tu información, vuelve a intentar.");
           return; // no se toca el consecutivo, no se resetea el formulario
         }
@@ -1417,6 +1441,7 @@
           storageSet(CONDUCTORES_KEY, JSON.stringify(nuevosConductores)).then(function(ok3){ if (ok3) conductores = nuevosConductores; });
         }
 
+        seMostroMensaje = true;
         showToast("formToastBox", "ok", esEdicion
           ? ("Manifiesto " + consecutivo + " actualizado correctamente.")
           : ("Manifiesto " + consecutivo + " guardado en " + (hasSupabase() ? "Supabase (nube)" : "modo local") + " y asociado a " + razonSocial + "."));
@@ -1424,9 +1449,16 @@
         resetForm();
       });
     }).catch(function(e){
-      console.error(e);
+      console.error("Error guardando manifiesto:", e);
+      seMostroMensaje = true;
       showToast("formToastBox", "err", "No se pudo guardar: " + (e && e.message ? e.message : "revisa la conexión e intenta de nuevo."));
     }).then(function(){
+      if (!seMostroMensaje){
+        // Seguro final: si por cualquier motivo no imprevisto no se mostró ningún
+        // aviso, igual se avisa — nunca debe quedar en silencio total.
+        console.warn("guardarManifiesto terminó sin mostrar ningún mensaje — revisar lógica.");
+        showToast("formToastBox", "err", "Algo no salió como se esperaba. Vuelve a intentar guardar; si persiste, avísame.");
+      }
       setBtnSaving(false);
     });
   }
