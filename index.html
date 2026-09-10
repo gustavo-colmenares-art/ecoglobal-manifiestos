@@ -108,6 +108,8 @@
   .bottom-bar{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--borde); padding:12px 16px; z-index:50; }
   .bottom-bar-inner{ max-width:520px; margin:0 auto; }
   .btn-primary{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--verde); color:#fff; border-radius:8px; padding:14px; font-size:15px; font-weight:700; }
+  .btn-primary-saving{ animation:pulso-guardando 1.2s ease-in-out infinite; }
+  @keyframes pulso-guardando{ 0%,100%{ opacity:1; } 50%{ opacity:0.65; } }
   .btn-primary:disabled{ opacity:.6; }
   .btn-secondary{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--verde); color:#fff; border-radius:8px; padding:10px; font-size:14px; font-weight:700; }
   .toast{ border-radius:6px; padding:8px 12px; font-size:12px; font-weight:500; margin-bottom:8px; }
@@ -716,7 +718,7 @@
   /* fetch con límite de tiempo: si Supabase no responde en 20s, se cancela
      y se reporta como error en vez de dejar la operación colgada en silencio. */
   function fetchConTimeout(url, opciones, timeoutMs){
-    timeoutMs = timeoutMs || 20000;
+    timeoutMs = timeoutMs || 12000;
     var controller = new AbortController();
     var timer = setTimeout(function(){ controller.abort(); }, timeoutMs);
     var opcionesFinal = Object.assign({}, opciones, { signal: controller.signal });
@@ -830,6 +832,28 @@
     }
     try { localStorage.setItem(key, value); return Promise.resolve(true); }
     catch(e){ return Promise.resolve(false); }
+  }
+  /* Reintenta una operación (que resuelve true/false) hasta N veces con una
+     pequeña espera entre cada intento. Pensado para señal irregular en campo,
+     para no depender de que el técnico vuelva a tocar el botón manualmente. */
+  function conReintentos(fn, maxIntentos, esperaMs, onIntento){
+    maxIntentos = maxIntentos || 3;
+    esperaMs = esperaMs || 1500;
+    function intentar(numero){
+      return fn().then(function(ok){
+        if (ok || numero >= maxIntentos) return ok;
+        if (onIntento) onIntento(numero + 1, maxIntentos);
+        return new Promise(function(resolve){
+          setTimeout(function(){ resolve(intentar(numero + 1)); }, esperaMs);
+        });
+      });
+    }
+    return intentar(1);
+  }
+  /* Guarda con reintento automático — usar en operaciones críticas donde
+     perder el dato no es aceptable (ej. el manifiesto en sí). */
+  function storageSetConReintentos(key, value, onIntento){
+    return conReintentos(function(){ return storageSet(key, value); }, 3, 1500, onIntento);
   }
   function storageList(prefix){
     if (hasSupabase()) return supabaseList(prefix);
@@ -1008,10 +1032,10 @@
       return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s];
     });
   }
-  function showToast(boxId, type, text){
+  function showToast(boxId, type, text, duracionMs){
     var box = $(boxId);
     box.innerHTML = '<div class="toast toast-' + (type === "ok" ? "ok" : "err") + '">' + escapeHtml(text) + "</div>";
-    setTimeout(function(){ box.innerHTML = ""; }, 3200);
+    setTimeout(function(){ box.innerHTML = ""; }, duracionMs || (type === "err" ? 7000 : 3200));
   }
 
   /* ---------- Consecutivo ---------- */
@@ -1324,10 +1348,16 @@
   }
 
   /* ---------- Guardar manifiesto ---------- */
-  function setBtnSaving(saving){
+  function setBtnSaving(saving, textoEtapa){
     var btn = $("btnGuardar");
     btn.disabled = saving;
-    btn.innerHTML = saving ? '<span class="spin">⏳</span> Subiendo a la nube...' : '🚚 Guardar y sincronizar';
+    if (saving){
+      btn.innerHTML = '<span class="spin">⏳</span> ' + (textoEtapa || "Guardando...");
+      btn.classList.add("btn-primary-saving");
+    } else {
+      btn.innerHTML = '🚚 Guardar y sincronizar';
+      btn.classList.remove("btn-primary-saving");
+    }
   }
   function defaultDateTime(){
     var now = new Date();
@@ -1355,7 +1385,10 @@
   }
   function guardarManifiesto(){
     if ($("btnGuardar").disabled){
-      return; // ya hay un guardado en curso — evita el doble envío que "pisa" el mensaje
+      // Avisa en vez de quedarse en silencio — así el técnico sabe que su
+      // toque SÍ se registró, solo que hay que esperar a que termine el anterior.
+      showToast("formToastBox", "err", "Espera un momento, ya se está guardando...", 2000);
+      return;
     }
     var razonSocial = val("razonSocial").trim();
     var placa = val("placa").trim().toUpperCase();
@@ -1363,7 +1396,7 @@
       showToast("formToastBox", "err", "Falta razón social del generador o placa del vehículo.");
       return;
     }
-    setBtnSaving(true);
+    setBtnSaving(true, "Verificando consecutivo...");
 
     var esEdicion = !!editingManifiestoId;
     var seMostroMensaje = false; // seguro: garantiza que siempre se vea un aviso al terminar
@@ -1376,6 +1409,7 @@
     prevPromise.then(function(prev){
       var consecutivo = prev.texto;
       var cfg = prev.cfg;
+      setBtnSaving(true, "Guardando manifiesto...");
 
       var materiales = leerMaterialesDelFormulario();
       var totalGeneral = materiales.reduce(function(acc, r){ return acc + (parseFloat(r.total) || 0); }, 0);
@@ -1402,15 +1436,18 @@
       };
       console.log("Guardando manifiesto — " + materiales.length + " residuo(s) registrados, tamaño del registro: " + JSON.stringify(record).length + " caracteres.");
 
-      // 1) Intenta guardar el manifiesto y REVISA si realmente se escribió.
-      return storageSet("manifiesto:" + record.id, JSON.stringify(record)).then(function(ok){
+      // 1) Intenta guardar el manifiesto, con hasta 3 reintentos automáticos
+      //    (señal irregular en campo) antes de darse por vencido.
+      return storageSetConReintentos("manifiesto:" + record.id, JSON.stringify(record), function(intento, total){
+        setBtnSaving(true, "Reintentando (" + intento + "/" + total + ")...");
+      }).then(function(ok){
         if (!ok){
           var detalle = lastSupabaseError ? (" (" + lastSupabaseError + ")") : "";
           seMostroMensaje = true;
-          showToast("formToastBox", "err", "No se pudo guardar el manifiesto en la nube" + detalle + ". No se perdió tu información, vuelve a intentar.");
+          showToast("formToastBox", "err", "No se pudo guardar el manifiesto en la nube tras varios intentos" + detalle + ". No se perdió tu información, vuelve a intentar cuando tengas mejor señal.", 8000);
           return; // no se toca el consecutivo, no se resetea el formulario
         }
-
+        setBtnSaving(true, "Finalizando...");
         // 2) Si es un manifiesto NUEVO, solo ahora se consume el consecutivo.
         if (!esEdicion){
           confirmarConsumoConsecutivo(cfg).then(function(okConsecutivo){
@@ -1574,7 +1611,11 @@
           clientes = actualizado;
           renderClientesList();
           ["c_razonSocial","c_nit","c_idEcoglobal","c_telefono","c_direccion","c_barrio","c_ciudad","c_correo"].forEach(function(id){ setVal(id, ""); });
-          showToast("clienteToastBox", "ok", "Empresa agregada al directorio.");
+          if (hasSupabase()){
+            showToast("clienteToastBox", "ok", razonSocial + " agregada al directorio y guardada en Supabase (visible para todos).");
+          } else {
+            showToast("clienteToastBox", "err", "⚠️ " + razonSocial + " se guardó SOLO en este dispositivo — no hay nube conectada (\"☁️ Sin nube\" arriba). Otros dispositivos no la verán. Conecta la nube y agrégala de nuevo.");
+          }
         } else {
           showToast("clienteToastBox", "err", "No se pudo guardar. Revisa tu conexión e intenta de nuevo.");
         }
@@ -1635,7 +1676,11 @@
           conductores = actualizado;
           renderConductoresList();
           ["v_nombre","v_cedula","v_placa","v_tipoVehiculo","v_auxiliar","v_cedulaAuxiliar"].forEach(function(id){ setVal(id, ""); });
-          showToast("conductorToastBox", "ok", "Conductor agregado al directorio.");
+          if (hasSupabase()){
+            showToast("conductorToastBox", "ok", nombre + " agregado al directorio y guardado en Supabase (visible para todos).");
+          } else {
+            showToast("conductorToastBox", "err", "⚠️ " + nombre + " se guardó SOLO en este dispositivo — no hay nube conectada (\"☁️ Sin nube\" arriba). Otros dispositivos no lo verán. Conecta la nube y agrégalo de nuevo.");
+          }
         } else {
           showToast("conductorToastBox", "err", "No se pudo guardar. Revisa tu conexión e intenta de nuevo.");
         }
